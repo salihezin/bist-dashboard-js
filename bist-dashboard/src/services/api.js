@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'https://bist-dashboard-js-lyph-bwtq8bcvi-salihezins-projects.vercel.app/api';
+const API_BASE = 'https://bist-dashboard-js-lyph.vercel.app/api';
 
 // En Son Kaydedilen Tarama Sonuçlarını ve Log Bilgisini Getir
 export async function getLatestResults() {
