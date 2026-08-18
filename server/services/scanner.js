@@ -25,7 +25,9 @@ function calculateVWMA(candles, period = 21) {
 // 2. ALMA (Arnaud Legoux Moving Average)
 function calculateALMA(prices, period = 9, sigma = 6, offset = 0.85) {
   if (prices.length < period) return [];
-  const m = Math.floor(offset * (period - 1));
+  // pandas_ta.alma uses the offset position as a floating-point value.
+  // Rounding it changes the weights (and therefore can change a match).
+  const m = offset * (period - 1);
   const s = period / sigma;
   const weights = [];
   let norm = 0;
@@ -139,9 +141,9 @@ export async function scanOne(symbol) {
   try {
     const formattedSymbol = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
 
-    // Son 180 günlük veriyi 'chart' metodu ile çekiyoruz
+    // Python'daki period="6mo" davranışına karşılık gelecek takvim aralığı.
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 180);
+    startDate.setMonth(startDate.getMonth() - 6);
 
     const result = await yahooFinance.chart(formattedSymbol, {
       period1: startDate,
@@ -157,7 +159,22 @@ export async function scanOne(symbol) {
     // Null/undefined mum verilerini temizleyelim
     const validCandles = candles.filter(
       (c) => c.open != null && c.high != null && c.low != null && c.close != null
-    );
+        && c.volume != null && Number.isFinite(c.open) && Number.isFinite(c.high)
+        && Number.isFinite(c.low) && Number.isFinite(c.close) && Number.isFinite(c.volume)
+    ).map((c) => {
+      // yfinance(auto_adjust=True) fiyat serisini temettü/split düzeltmesiyle
+      // hesaplar. Yahoo'nun adjclose alanı varsa aynı düzeltmeyi OHLC'ye uygula.
+      const adjustment = Number.isFinite(c.adjclose) && c.close !== 0
+        ? c.adjclose / c.close
+        : 1;
+      return {
+        ...c,
+        open: c.open * adjustment,
+        high: c.high * adjustment,
+        low: c.low * adjustment,
+        close: c.close * adjustment,
+      };
+    });
 
     if (validCandles.length < 40) {
       return { data: null, reason: 'yetersiz_veri' };
@@ -179,6 +196,10 @@ export async function scanOne(symbol) {
     const lastCmf = cmfSeries.length > 0 ? cmfSeries[cmfSeries.length - 1] : null;
 
     // Mesafeleri Hesapla
+    if (!Number.isFinite(lastAlma9) || !Number.isFinite(lastVwma21) || lastAlma9 === 0 || lastVwma21 === 0) {
+      return { data: null, reason: 'yetersiz_veri' };
+    }
+
     const almaDist = ((lastBar.close - lastAlma9) / lastAlma9) * 100;
     const vwmaDist = ((lastBar.close - lastVwma21) / lastVwma21) * 100;
 

@@ -44,6 +44,18 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 
+function formatStockData(dataList) {
+  if (!Array.isArray(dataList)) return [];
+  return dataList.map((item) => ({
+    Hisse: item.symbol || item.Hisse || '',
+    Fiyat: item.price ?? item.Fiyat ?? 0,
+    ALMA9_Mesafe: item.alma_dist ?? item.ALMA9_Mesafe ?? 0,
+    VWMA21_Mesafe: item.vwma_dist ?? item.VWMA21_Mesafe ?? 0,
+    ADX: item.adx ?? item.ADX ?? 0,
+    CMF: item.cmf ?? item.CMF ?? 0
+  }));
+}
+
 export default function App() {
   // Auth State
   const [session, setSession] = useState(null);
@@ -76,110 +88,54 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Veritabanından (snake_case) gelen veriyi Tablonun anladığı formata dönüştüren yardımcı fonksiyon:
-const formatStockData = (dataList) => {
-  if (!Array.isArray(dataList)) return [];
-  return dataList.map((item) => ({
-    Hisse: item.symbol || item.Hisse || '',
-    Fiyat: item.price ?? item.Fiyat ?? 0,
-    ALMA9_Mesafe: item.alma_dist ?? item.ALMA9_Mesafe ?? 0,
-    VWMA21_Mesafe: item.vwma_dist ?? item.VWMA21_Mesafe ?? 0,
-    ADX: item.adx ?? item.ADX ?? 0,
-    CMF: item.cmf ?? item.CMF ?? 0
-  }));
-};
-
-// 1. Sayfa Açıldığında / F5 Atıldığında Çalışan Fonksiyon
-const fetchLatestResults = async () => {
-  try {
-    const res = await fetch('http://localhost:3001/api/latest-results'); // Portunuz farklıysa güncelleyin (örn: 3000 veya 5000)
-    const data = await res.json();
-    
-    console.log('Backend Raw Results:', data.results);
-
-    if (data && data.results) {
-      const formatted = formatStockData(data.results);
-      console.log('Formatted Results:', formatted);
-      
-      // State'lerinizi güncelleyin (Kendi state isimlerinize göre ayarlayın):
-      setScannedResults(formatted);
-      if (data.log) {
-        setScanLog(data.log);
-      }
+  async function fetchLatestResults() {
+    try {
+      const data = await getLatestResults();
+      setScannedResults(formatStockData(data?.results));
+      setScanLog(data?.log || null);
+    } catch (err) {
+      console.error('Sonuçlar alınamadı:', err);
+      setErrorMessage('Kayıtlı tarama sonuçları yüklenemedi.');
     }
-  } catch (err) {
-    console.error('Sonuçlar alınamadı:', err);
   }
-};
 
-// 2. "YENİ TARAMA" Butonuna Basılınca Çalışan Fonksiyon
-const handleScan = async () => {
-  try {
-    setIsScanning(true);
-    const res = await fetch('http://localhost:3001/api/scan-all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: session.user?.id || null })
-    });
-    
-    const data = await res.json();
-    
-    if (data && data.results) {
-      const formatted = formatStockData(data.results);
-      console.log('Formatted Results after Scan:', formatted);
-      setScannedResults(formatted);
-      if (data.log) {
-        setScanLog(data.log);
-      }
-    }
-  } catch (err) {
-    console.error('Tarama hatası:', err);
-  } finally {
-    setIsScanning(false);
-  }
-};
-
-  // 2. Oturum Açılınca Son Verileri ve Hisse Havuzunu Yükle
-  useEffect(() => {
-    if (session) {
-      fetchLatestResults();
-      fetchTickers();
-    }
-  }, [session]);
-
-  const loadLatestData = async () => {
-  try {
-    const data = await getLatestResults();
-    
-    if (data && Array.isArray(data.results)) {
-      console.log('Backend Raw Results:', data.results);
-      setScanLog(data.log || null);
-
-      const formatted = data.results.map((r) => ({
-        Hisse: r.symbol || r.Hisse || r.ticker || '',
-        Fiyat: r.price ?? r.Fiyat ?? 0,
-        ALMA9_Mesafe: r.alma_dist ?? r.alma9_distance ?? r.alma_distance ?? r.ALMA9_Mesafe ?? 0,
-        VWMA21_Mesafe: r.vwma_dist ?? r.vwma21_distance ?? r.vwma_distance ?? r.VWMA21_Mesafe ?? 0,
-        ADX: r.adx ?? r.ADX ?? 0,
-        CMF: r.cmf ?? r.CMF ?? 0
-      }));
-
-      console.log('Formatted Results:', formatted);
-      setScannedResults(formatted);
-    }
-  } catch (err) {
-    console.error('Veri yüklenirken hata:', err);
-  }
-};
-
-  const fetchTickers = async () => {
+  async function fetchTickers() {
     try {
       const data = await getTickers();
       setTickers(data || []);
     } catch (err) {
       console.error('Hisseler yüklenirken hata:', err);
     }
+  }
+
+// 2. "YENİ TARAMA" Butonuna Basılınca Çalışan Fonksiyon
+  const handleScan = async () => {
+  try {
+    setIsScanning(true);
+    setErrorMessage('');
+    const data = await runScanAll(session?.user?.id);
+    setScannedResults(formatStockData(data?.results));
+    setScanLog(data?.log || null);
+  } catch (err) {
+    console.error('Tarama hatası:', err);
+    setErrorMessage(err.response?.data?.error || 'Tarama başlatılamadı.');
+  } finally {
+    setIsScanning(false);
+  }
   };
+
+  // 2. Oturum Açılınca Son Verileri ve Hisse Havuzunu Yükle
+  useEffect(() => {
+    if (session) {
+      // Veri istekleri effect tamamlandıktan sonra başlar; oturum ilk açıldığında
+      // kaydedilen son sonuçlar ile hisse havuzu birlikte yüklenir.
+      const timer = window.setTimeout(() => {
+        void fetchLatestResults();
+        void fetchTickers();
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [session]);
 
   // Auth İşlemleri
   const handleAuth = async (e) => {
@@ -203,30 +159,6 @@ const handleScan = async () => {
     await supabase.auth.signOut();
   };
 
-  // Yeni Tarama Tetikleme (Backend Limit Kontrollü)
-  const handleStartScan = async () => {
-    setIsScanning(true);
-    setErrorMessage('');
-    try {
-      const res = await runScanAll(session.user.id);
-      setScanLog(res.log);
-      const formatted = (res.results || []).map((r) => ({
-        Hisse: r.Hisse,
-        Fiyat: r.Fiyat,
-        ALMA9_Mesafe: r.ALMA9_Mesafe,
-        VWMA21_Mesafe: r.VWMA21_Mesafe,
-        ADX: r.ADX,
-        CMF: r.CMF
-      }));
-      setScannedResults(formatted);
-    } catch (err) {
-      const msg = err.response?.data?.error || 'Tarama başlatılamadı.';
-      setErrorMessage(msg);
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
   // Hisse Ekleme / Silme
   const handleAddTicker = async () => {
     if (!newSymbol.trim()) return;
@@ -243,7 +175,7 @@ const handleScan = async () => {
     try {
       await deleteTicker(id);
       fetchTickers();
-    } catch (err) {
+    } catch {
       alert('Hisse silinirken hata oluştu.');
     }
   };
@@ -476,6 +408,12 @@ const handleScan = async () => {
             </Card>
           </Grid>
         </Grid>
+
+        {errorMessage && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorMessage}
+          </Alert>
+        )}
 
         {/* Sonuç Tablosu */}
         <Box>
