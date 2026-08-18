@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { scanOne } from '../services/scanner.js';
+import { getStockDetails, scanOne } from '../services/scanner.js';
 
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
@@ -64,6 +64,16 @@ router.delete('/tickers/:id', async (req, res) => {
     return res.json({ message: 'Hisse silindi' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/stocks/:symbol', async (req, res) => {
+  try {
+    const details = await getStockDetails(req.params.symbol.toUpperCase().trim());
+    return res.json(details);
+  } catch (err) {
+    console.error('Hisse detayı alınamadı:', err.message);
+    return res.status(502).json({ error: 'Hisse detayları şu anda alınamadı.' });
   }
 });
 

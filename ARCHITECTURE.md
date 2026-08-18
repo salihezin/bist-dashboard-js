@@ -43,6 +43,7 @@ Ana giriş noktası `bist-dashboard/src/main.jsx`, uygulama bileşeni ise `bist-
 | Sembolleri listele | `GET /tickers` |
 | Sembol ekle | `POST /tickers` |
 | Sembol sil | `DELETE /tickers/:id` |
+| Hisse detayı | `GET /stocks/:symbol` |
 
 `bist-dashboard/src/supabaseClient.js` yalnızca tarayıcıdaki Auth oturumu için publishable anahtarı kullanır. Sunucu anahtarı bu katmanda yer almamalıdır.
 

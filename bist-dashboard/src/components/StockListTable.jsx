@@ -10,7 +10,7 @@ import {
   Chip
 } from '@mui/material';
 
-export default function StockListTable({ stocks }) {
+export default function StockListTable({ stocks, onSelectStock }) {
   if (!stocks || stocks.length === 0) {
     return (
       <Paper elevation={1} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
@@ -38,7 +38,15 @@ export default function StockListTable({ stocks }) {
           {stocks.map((row) => (
             <TableRow hover key={row.Hisse}>
               <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
-                <Chip label={row.Hisse} color="primary" variant="outlined" size="small" />
+                <Chip
+                  label={row.Hisse}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  clickable
+                  onClick={() => onSelectStock?.(row.Hisse)}
+                  aria-label={`${row.Hisse} detaylarını göster`}
+                />
               </TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                 {row.Fiyat?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺

@@ -5,6 +5,33 @@ const yahooFinance = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
 });
 
+export async function getStockDetails(symbol) {
+  const formattedSymbol = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
+  const quote = await yahooFinance.quote(formattedSymbol);
+
+  return {
+    symbol: quote.symbol.replace('.IS', ''),
+    name: quote.longName || quote.shortName || symbol.replace('.IS', ''),
+    currency: quote.currency || 'TRY',
+    price: quote.regularMarketPrice ?? null,
+    change: quote.regularMarketChange ?? null,
+    changePercent: quote.regularMarketChangePercent ?? null,
+    open: quote.regularMarketOpen ?? null,
+    high: quote.regularMarketDayHigh ?? null,
+    low: quote.regularMarketDayLow ?? null,
+    previousClose: quote.regularMarketPreviousClose ?? null,
+    volume: quote.regularMarketVolume ?? null,
+    averageVolume: quote.averageDailyVolume3Month ?? null,
+    fiftyTwoWeekLow: quote.fiftyTwoWeekLow ?? null,
+    fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh ?? null,
+    marketCap: quote.marketCap ?? null,
+    trailingPE: quote.trailingPE ?? null,
+    priceToBook: quote.priceToBook ?? null,
+    marketTime: quote.regularMarketTime ?? null,
+    delayedByMinutes: quote.exchangeDataDelayedBy ?? null,
+  };
+}
+
 // ==========================================
 // SAF JAVASCRIPT TEKNİK İNDİKATÖR HESAPLAMALARI
 // ==========================================

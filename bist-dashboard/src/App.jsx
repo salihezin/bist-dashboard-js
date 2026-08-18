@@ -5,7 +5,8 @@ import {
   runScanAll,
   getTickers,
   addTicker,
-  deleteTicker
+  deleteTicker,
+  getStockDetails
 } from './services/api';
 
 import StockListTable from './components/StockListTable';
@@ -56,6 +57,11 @@ function formatStockData(dataList) {
   }));
 }
 
+function formatNumber(value, options = {}) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return value.toLocaleString('tr-TR', options);
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
@@ -71,6 +77,11 @@ export default function App() {
   const [tickers, setTickers] = useState([]);
   const [openTickerDialog, setOpenTickerDialog] = useState(false);
   const [newSymbol, setNewSymbol] = useState('');
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState('');
+  const [stockDetails, setStockDetails] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -167,6 +178,22 @@ export default function App() {
       fetchTickers();
     } catch {
       alert('Hisse silinirken hata oluştu.');
+    }
+  };
+
+  const handleSelectStock = async (symbol) => {
+    setSelectedSymbol(symbol);
+    setStockDetails(null);
+    setDetailsError('');
+    setIsDetailsOpen(true);
+    setIsLoadingDetails(true);
+
+    try {
+      setStockDetails(await getStockDetails(symbol));
+    } catch (err) {
+      setDetailsError(err.response?.data?.error || 'Hisse detayları alınamadı.');
+    } finally {
+      setIsLoadingDetails(false);
     }
   };
 
@@ -394,7 +421,7 @@ export default function App() {
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
             Son Tarama Sonuçları
           </Typography>
-          <StockListTable stocks={scannedResults} />
+          <StockListTable stocks={scannedResults} onSelectStock={handleSelectStock} />
         </Box>
       </Container>
 
@@ -430,6 +457,72 @@ export default function App() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenTickerDialog(false)}>Kapat</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {stockDetails?.name || `${selectedSymbol} Detayları`}
+        </DialogTitle>
+        <DialogContent dividers>
+          {isLoadingDetails && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress aria-label="Hisse detayları yükleniyor" />
+            </Box>
+          )}
+
+          {detailsError && <Alert severity="error">{detailsError}</Alert>}
+
+          {stockDetails && !isLoadingDetails && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary">
+                  {stockDetails.symbol} · {stockDetails.currency}
+                  {stockDetails.delayedByMinutes != null && ` · ${stockDetails.delayedByMinutes} dk gecikmeli`}
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                  {formatNumber(stockDetails.price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                </Typography>
+                <Typography
+                  color={stockDetails.change == null || stockDetails.change >= 0 ? 'success.main' : 'error.main'}
+                  sx={{ fontWeight: 600 }}
+                >
+                  {stockDetails.change != null && stockDetails.change >= 0 ? '+' : ''}
+                  {formatNumber(stockDetails.change, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({stockDetails.changePercent != null && stockDetails.changePercent >= 0 ? '+' : ''}
+                  {formatNumber(stockDetails.changePercent, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                </Typography>
+              </Grid>
+
+              {[
+                ['Açılış', stockDetails.open, 'fiyat'],
+                ['Gün içi düşük', stockDetails.low, 'fiyat'],
+                ['Gün içi yüksek', stockDetails.high, 'fiyat'],
+                ['Önceki kapanış', stockDetails.previousClose, 'fiyat'],
+                ['Hacim', stockDetails.volume, 'adet'],
+                ['3 aylık ort. hacim', stockDetails.averageVolume, 'adet'],
+                ['52 hf. düşük', stockDetails.fiftyTwoWeekLow, 'fiyat'],
+                ['52 hf. yüksek', stockDetails.fiftyTwoWeekHigh, 'fiyat'],
+                ['Piyasa değeri', stockDetails.marketCap, 'para'],
+                ['F/K', stockDetails.trailingPE, 'oran'],
+                ['PD/DD', stockDetails.priceToBook, 'oran'],
+              ].map(([label, value, type]) => (
+                <Grid item xs={6} sm={4} key={label}>
+                  <Typography variant="caption" color="text.secondary">
+                    {label}
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {type === 'fiyat' && `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`}
+                    {type === 'adet' && formatNumber(value, { maximumFractionDigits: 0 })}
+                    {type === 'para' && `${formatNumber(value, { maximumFractionDigits: 0 })} ₺`}
+                    {type === 'oran' && formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDetailsOpen(false)}>Kapat</Button>
         </DialogActions>
       </Dialog>
     </Box>

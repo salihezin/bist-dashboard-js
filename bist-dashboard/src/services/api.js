@@ -31,3 +31,8 @@ export async function deleteTicker(id) {
   const response = await axios.delete(`${API_BASE}/tickers/${id}`);
   return response.data;
 }
+
+export async function getStockDetails(symbol) {
+  const response = await axios.get(`${API_BASE}/stocks/${encodeURIComponent(symbol)}`);
+  return response.data;
+}
