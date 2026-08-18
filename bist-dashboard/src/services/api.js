@@ -8,7 +8,7 @@ export async function getLatestResults() {
   return response.data;
 }
 
-// Yeni Tarama Başlat (Günde max 3 limitli)
+// Yeni tarama başlatır.
 export async function runScanAll(userId) {
   const response = await axios.post(`${API_BASE}/scan-all`, { userId });
   return response.data;

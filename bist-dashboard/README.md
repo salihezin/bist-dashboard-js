@@ -1,18 +1,19 @@
-# React + Vite
+# BIST Taraması
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React arayüzü, Supabase kimlik doğrulamasıyla kullanıcıyı oturum açtırır ve Node.js API'si üzerinden BIST tarama sonuçlarını gösterir.
 
-Currently, two official plugins are available:
+## Geliştirme
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Arayüzü başlatmak için:
 
-## React Compiler
+```bash
+npm run dev
+```
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+API sunucusunu `server` klasöründe başlatmak için:
 
-Note: This will impact Vite dev & build performances.
+```bash
+npm run dev
+```
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Sunucunun çalışması için `server/.env` içinde `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` tanımlı olmalıdır.

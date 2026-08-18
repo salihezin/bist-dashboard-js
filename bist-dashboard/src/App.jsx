@@ -57,25 +57,21 @@ function formatStockData(dataList) {
 }
 
 export default function App() {
-  // Auth State
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  // Data State
   const [scannedResults, setScannedResults] = useState([]);
   const [scanLog, setScanLog] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Tickers Management State
   const [tickers, setTickers] = useState([]);
   const [openTickerDialog, setOpenTickerDialog] = useState(false);
   const [newSymbol, setNewSymbol] = useState('');
 
-  // 1. Supabase Session Dinleyicisi
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -108,27 +104,23 @@ export default function App() {
     }
   }
 
-// 2. "YENİ TARAMA" Butonuna Basılınca Çalışan Fonksiyon
   const handleScan = async () => {
-  try {
-    setIsScanning(true);
-    setErrorMessage('');
-    const data = await runScanAll(session?.user?.id);
-    setScannedResults(formatStockData(data?.results));
-    setScanLog(data?.log || null);
-  } catch (err) {
-    console.error('Tarama hatası:', err);
-    setErrorMessage(err.response?.data?.error || 'Tarama başlatılamadı.');
-  } finally {
-    setIsScanning(false);
-  }
+    try {
+      setIsScanning(true);
+      setErrorMessage('');
+      const data = await runScanAll(session?.user?.id);
+      setScannedResults(formatStockData(data?.results));
+      setScanLog(data?.log || null);
+    } catch (err) {
+      console.error('Tarama hatası:', err);
+      setErrorMessage(err.response?.data?.error || 'Tarama başlatılamadı.');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
-  // 2. Oturum Açılınca Son Verileri ve Hisse Havuzunu Yükle
   useEffect(() => {
     if (session) {
-      // Veri istekleri effect tamamlandıktan sonra başlar; oturum ilk açıldığında
-      // kaydedilen son sonuçlar ile hisse havuzu birlikte yüklenir.
       const timer = window.setTimeout(() => {
         void fetchLatestResults();
         void fetchTickers();
@@ -137,7 +129,6 @@ export default function App() {
     }
   }, [session]);
 
-  // Auth İşlemleri
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -159,7 +150,6 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
-  // Hisse Ekleme / Silme
   const handleAddTicker = async () => {
     if (!newSymbol.trim()) return;
     try {
@@ -180,9 +170,6 @@ export default function App() {
     }
   };
 
-  // -------------------------------------------------------------
-  // GİRİŞ / KAYIT EKRANI
-  // -------------------------------------------------------------
   if (!session) {
     return (
       <Box
@@ -297,12 +284,8 @@ export default function App() {
     );
   }
 
-  // -------------------------------------------------------------
-  // DASHBOARD VIEW
-  // -------------------------------------------------------------
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f8fafc', pb: 6 }}>
-      {/* Navbar */}
       <AppBar position="static" elevation={1} sx={{ backgroundColor: '#0f172a' }}>
         <Toolbar>
           <ShowChartIcon sx={{ mr: 1.5, color: '#38bdf8' }} />
@@ -328,14 +311,12 @@ export default function App() {
       </AppBar>
 
       <Container maxWidth="xl" sx={{ mt: 4 }}>
-        {/* Hata Mesajı (Limit Aşımı vb.) */}
         {errorMessage && (
-          <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
             {errorMessage}
           </Alert>
         )}
 
-        {/* Son Güncelleme & Bilgi Kartları */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={4}>
             <Card elevation={2} sx={{ borderRadius: 2 }}>
@@ -409,13 +390,6 @@ export default function App() {
           </Grid>
         </Grid>
 
-        {errorMessage && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errorMessage}
-          </Alert>
-        )}
-
-        {/* Sonuç Tablosu */}
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
             Son Tarama Sonuçları
@@ -424,7 +398,6 @@ export default function App() {
         </Box>
       </Container>
 
-      {/* Hisse Yönetimi Modal Dialog */}
       <Dialog open={openTickerDialog} onClose={() => setOpenTickerDialog(false)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontWeight: 700 }}>Hisse Havuzu Yönetimi</DialogTitle>
         <DialogContent dividers>
