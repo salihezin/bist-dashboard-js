@@ -365,8 +365,8 @@ function DashboardShell({
           </Typography>
           <StockListTable stocks={scannedResults} onSelectStock={handleSelectStock} />
         </Box>
+
         <Box sx={{ mt: 5 }}>
-          <Box sx={{ mt: 5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               Bugün %9.5+ Yükselenler
