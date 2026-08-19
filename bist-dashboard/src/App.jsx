@@ -84,7 +84,6 @@ function getStoredThemeMode() {
 }
 
 function AuthScreen({
-  isSignUp,
   appVersion,
   mode,
   onToggleMode,
@@ -93,8 +92,7 @@ function AuthScreen({
   password,
   setPassword,
   authError,
-  handleAuth,
-  setIsSignUp
+  handleAuth
 }) {
   return (
     <Box
@@ -148,7 +146,7 @@ function AuthScreen({
           BIST Dashboard
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3, px: { xs: 0.5, sm: 0 } }}>
-          {isSignUp ? `Yeni hesap oluşturun (${appVersion})` : `Supabase hesabınızla giriş yapın (${appVersion})`}
+          Supabase hesabınızla giriş yapın ({appVersion})
         </Typography>
 
         <Box component="form" onSubmit={handleAuth} noValidate>
@@ -203,16 +201,7 @@ function AuthScreen({
             size="large"
             sx={{ mt: 3, mb: 1, py: 1.2, fontWeight: 'bold', borderRadius: 2 }}
           >
-            {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
-          </Button>
-
-          <Button
-            color="inherit"
-            size="small"
-            onClick={() => setIsSignUp(!isSignUp)}
-            sx={{ color: 'text.secondary', textTransform: 'none', mt: 1 }}
-          >
-            {isSignUp ? 'Zaten hesabınız var mı? Giriş Yapın' : 'Hesabınız yok mu? Kayıt Olun'}
+            Giriş Yap
           </Button>
         </Box>
       </Paper>
@@ -487,7 +476,6 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [mode, setMode] = useState(getStoredThemeMode());
 
   const [scannedResults, setScannedResults] = useState([]);
@@ -601,14 +589,8 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err) {
       setAuthError(err.message);
     }
@@ -659,7 +641,6 @@ export default function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline enableColorScheme />
         <AuthScreen
-          isSignUp={isSignUp}
           appVersion={appVersion}
           mode={mode}
           onToggleMode={toggleMode}
@@ -669,7 +650,6 @@ export default function App() {
           setPassword={setPassword}
           authError={authError}
           handleAuth={handleAuth}
-          setIsSignUp={setIsSignUp}
         />
       </ThemeProvider>
     );
