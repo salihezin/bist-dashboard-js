@@ -7,7 +7,8 @@ import {
   getTickers,
   addTicker,
   deleteTicker,
-  getStockDetails
+  getStockDetails,
+  getGainers
 } from './services/api';
 
 import StockListTable from './components/StockListTable';
@@ -235,7 +236,12 @@ function DashboardShell({
   selectedSymbol,
   stockDetails,
   isLoadingDetails,
-  detailsError
+  detailsError,
+  gainers,            
+  isLoadingGainers,   
+  gainersError,       
+  setGainersError,    
+  handleFetchGainers  
 }) {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', pb: 6 }}>
@@ -766,6 +772,11 @@ export default function App() {
         stockDetails={stockDetails}
         isLoadingDetails={isLoadingDetails}
         detailsError={detailsError}
+        gainers={gainers}
+        isLoadingGainers={isLoadingGainers}
+        gainersError={gainersError}
+        setGainersError={setGainersError}
+        handleFetchGainers={handleFetchGainers}
       />
     </ThemeProvider>
   );
