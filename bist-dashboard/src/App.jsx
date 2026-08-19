@@ -365,6 +365,67 @@ function DashboardShell({
           </Typography>
           <StockListTable stocks={scannedResults} onSelectStock={handleSelectStock} />
         </Box>
+        <Box sx={{ mt: 5 }}>
+          <Box sx={{ mt: 5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              Bugün %9.5+ Yükselenler
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={isLoadingGainers ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />}
+              onClick={handleFetchGainers}
+              disabled={isLoadingGainers}
+              sx={{ borderRadius: 2 }}
+            >
+              {isLoadingGainers ? 'Taranıyor' : 'Yükselenleri Getir'}
+            </Button>
+          </Box>
+
+          {gainersError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setGainersError('')}>
+              {gainersError}
+            </Alert>
+          )}
+
+          <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr" sx={{ backgroundColor: 'action.hover' }}>
+                  <Box component="th" sx={{ textAlign: 'left', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Hisse</Box>
+                  <Box component="th" sx={{ textAlign: 'right', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Fiyat</Box>
+                  <Box component="th" sx={{ textAlign: 'right', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Değişim %</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {gainers.length === 0 && !isLoadingGainers && (
+                  <Box component="tr">
+                    <Box component="td" colSpan={3} sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                      Henüz veri yok
+                    </Box>
+                  </Box>
+                )}
+                {gainers.map((g) => (
+                  <Box
+                    component="tr"
+                    key={g.Hisse}
+                    onClick={() => handleSelectStock(g.Hisse)}
+                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+                  >
+                    <Box component="td" sx={{ p: 1.5, fontWeight: 600 }}>{g.Hisse}</Box>
+                    <Box component="td" sx={{ p: 1.5, textAlign: 'right' }}>
+                      {formatNumber(g.Fiyat, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                    </Box>
+                    <Box component="td" sx={{ p: 1.5, textAlign: 'right', color: 'success.main', fontWeight: 600 }}>
+                      +{formatNumber(g.DegisimYuzde, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
       </Container>
 
       <Dialog open={openTickerDialog} onClose={() => setOpenTickerDialog(false)} fullWidth maxWidth="xs">
@@ -491,6 +552,11 @@ export default function App() {
   const [stockDetails, setStockDetails] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
+ 
+  const [gainers, setGainers] = useState([]);
+  const [isLoadingGainers, setIsLoadingGainers] = useState(false);
+  const [gainersError, setGainersError] = useState('');
+  
 
   useEffect(() => {
     window.localStorage.setItem('bist-dashboard-theme-mode', mode);
@@ -545,6 +611,7 @@ export default function App() {
       const data = await getLatestResults();
       setScannedResults(formatStockData(data?.results));
       setScanLog(data?.log || null);
+      handleFetchGainers();
     } catch (err) {
       console.error('Sonuçlar alınamadı:', err);
       setErrorMessage('Kayıtlı tarama sonuçları yüklenemedi.');
@@ -574,6 +641,20 @@ export default function App() {
       setIsScanning(false);
     }
   };
+
+  const handleFetchGainers = async () => {
+  try {
+    setIsLoadingGainers(true);
+    setGainersError('');
+    const data = await getGainers(9.5);
+    setGainers(data?.results || []);
+  } catch (err) {
+    console.error('Yükselenler alınamadı:', err);
+    setGainersError(err.response?.data?.error || 'Yükselenler alınamadı.');
+  } finally {
+    setIsLoadingGainers(false);
+  }
+};
 
   useEffect(() => {
     if (session) {

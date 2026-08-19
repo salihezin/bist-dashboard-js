@@ -255,3 +255,24 @@ export async function scanOne(symbol) {
     return { data: null, reason: 'hata' };
   }
 }
+
+
+export async function scanGainer(symbol, minChangePercent = 9.5) {
+  try {
+    const details = await getStockDetails(symbol);
+    if (Number.isFinite(details.changePercent) && details.changePercent >= minChangePercent) {
+      return {
+        data: {
+          Hisse: details.symbol,
+          Fiyat: details.price,
+          DegisimYuzde: Number(details.changePercent.toFixed(2)),
+        },
+        reason: 'uygun',
+      };
+    }
+    return { data: null, reason: 'kritere_uymadi' };
+  } catch (error) {
+    console.error(`${symbol} kazanc taramasinda hata:`, error.message);
+    return { data: null, reason: 'hata' };
+  }
+}

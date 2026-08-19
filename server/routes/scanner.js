@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { getStockDetails, scanOne } from '../services/scanner.js';
+import { getStockDetails, scanOne, scanGainer } from '../services/scanner.js';
 
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
@@ -45,6 +45,40 @@ async function scanTickers(tickers) {
   );
   return matches;
 }
+
+async function scanGainers(tickers, minChangePercent = 9.5) {
+  const matches = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tickers.length) {
+      const ticker = tickers[nextIndex++];
+      const { data: match } = await scanGainer(ticker.symbol, minChangePercent);
+      if (match) matches.push(match);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, worker)
+  );
+
+  matches.sort((a, b) => b.DegisimYuzde - a.DegisimYuzde);
+  return matches;
+}
+
+router.get('/gainers', async (req, res) => {
+  try {
+    const minPct = Number(req.query.min) || 9.5;
+    const { data: tickersData, error } = await supabase.from('tickers').select('symbol');
+    if (error) throw error;
+
+    const gainers = await scanGainers(tickersData, minPct);
+    return res.json({ threshold: minPct, count: gainers.length, results: gainers });
+  } catch (err) {
+    console.error('Gainers hatasi:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 // --- ROUTER ENDPOINTLERİ ---
 

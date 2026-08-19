@@ -36,3 +36,8 @@ export async function getStockDetails(symbol) {
   const response = await axios.get(`${API_BASE}/stocks/${encodeURIComponent(symbol)}`);
   return response.data;
 }
+
+export async function getGainers(minPercent = 9.5) {
+  const { data } = await axios.get(`${API_BASE}/gainers`, { params: { min: minPercent } });
+  return data;
+}
