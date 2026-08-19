@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
+import packageJson from '../package.json';
 import {
   getLatestResults,
   runScanAll,
@@ -34,7 +35,10 @@ import {
   List,
   ListItem,
   ListItemText,
-  Alert
+  Alert,
+  CssBaseline,
+  ThemeProvider,
+  createTheme
 } from '@mui/material';
 
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -44,6 +48,8 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
 function formatStockData(dataList) {
   if (!Array.isArray(dataList)) return [];
@@ -62,12 +68,427 @@ function formatNumber(value, options = {}) {
   return value.toLocaleString('tr-TR', options);
 }
 
+const appVersion = `v${packageJson.version}`;
+
+function getStoredThemeMode() {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const storedMode = window.localStorage.getItem('bist-dashboard-theme-mode');
+  if (storedMode === 'light' || storedMode === 'dark') {
+    return storedMode;
+  }
+
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function AuthScreen({
+  isSignUp,
+  appVersion,
+  mode,
+  onToggleMode,
+  email,
+  setEmail,
+  password,
+  setPassword,
+  authError,
+  handleAuth,
+  setIsSignUp
+}) {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: (theme) =>
+          mode === 'dark'
+            ? 'linear-gradient(180deg, #020617 0%, #0f172a 100%)'
+            : 'linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%)',
+        px: { xs: 1.5, sm: 2 },
+        py: { xs: 2, sm: 0 }
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          p: { xs: 2.5, sm: 4 },
+          width: '100%',
+          maxWidth: 420,
+          borderRadius: 3,
+          backgroundColor: 'background.paper',
+          color: 'text.primary',
+          textAlign: 'center'
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+          <Tooltip title={mode === 'dark' ? 'Açık moda geç' : 'Karanlık moda geç'}>
+            <IconButton onClick={onToggleMode} size="small" color="inherit">
+              {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box
+          sx={{
+            width: 50,
+            height: 50,
+            borderRadius: '50%',
+            backgroundColor: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px auto'
+          }}
+        >
+          <LockOutlinedIcon sx={{ color: '#fff', fontSize: 28 }} />
+        </Box>
+        <Typography component="h1" variant="h5" sx={{ fontWeight: 700, mb: 1, fontSize: { xs: '1.35rem', sm: '1.5rem' } }}>
+          BIST Dashboard
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, px: { xs: 0.5, sm: 0 } }}>
+          {isSignUp ? `Yeni hesap oluşturun (${appVersion})` : `Supabase hesabınızla giriş yapın (${appVersion})`}
+        </Typography>
+
+        <Box component="form" onSubmit={handleAuth} noValidate>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="E-Posta Adresi"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            sx={{
+              '& .MuiInputBase-root': { color: 'text.primary' },
+              '& .MuiInputLabel-root': { color: 'text.secondary' },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: 'divider' },
+                '&:hover fieldset': { borderColor: 'text.secondary' }
+              }
+            }}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Şifre"
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{
+              '& .MuiInputBase-root': { color: 'text.primary' },
+              '& .MuiInputLabel-root': { color: 'text.secondary' },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: 'divider' },
+                '&:hover fieldset': { borderColor: 'text.secondary' }
+              }
+            }}
+          />
+
+          {authError && (
+            <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+              {authError}
+            </Typography>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            size="large"
+            sx={{ mt: 3, mb: 1, py: 1.2, fontWeight: 'bold', borderRadius: 2 }}
+          >
+            {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
+          </Button>
+
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => setIsSignUp(!isSignUp)}
+            sx={{ color: 'text.secondary', textTransform: 'none', mt: 1 }}
+          >
+            {isSignUp ? 'Zaten hesabınız var mı? Giriş Yapın' : 'Hesabınız yok mu? Kayıt Olun'}
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
+  );
+}
+
+function DashboardShell({
+  appVersion,
+  mode,
+  onToggleMode,
+  session,
+  handleLogout,
+  errorMessage,
+  setErrorMessage,
+  tickers,
+  setOpenTickerDialog,
+  scannedResults,
+  scanLog,
+  isScanning,
+  handleScan,
+  handleSelectStock,
+  openTickerDialog,
+  setNewSymbol,
+  newSymbol,
+  handleAddTicker,
+  handleDeleteTicker,
+  tickersList,
+  isDetailsOpen,
+  setIsDetailsOpen,
+  selectedSymbol,
+  stockDetails,
+  isLoadingDetails,
+  detailsError
+}) {
+  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', pb: 6 }}>
+      <AppBar position="static" elevation={1} sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
+        <Toolbar sx={{ flexWrap: 'wrap', gap: 1, py: 1 }}>
+          <ShowChartIcon sx={{ mr: 1.5, color: 'primary.main' }} />
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, minWidth: 0 }}>
+            BIST Taraması
+          </Typography>
+          <Chip
+            label={appVersion}
+            size="small"
+            color="primary"
+            variant="outlined"
+            sx={{ mr: { xs: 0, sm: 2 } }}
+          />
+          <Tooltip title={mode === 'dark' ? 'Açık moda geç' : 'Karanlık moda geç'}>
+            <IconButton onClick={onToggleMode} color="inherit">
+              {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
+          <Typography variant="body2" sx={{ mr: { xs: 0, sm: 2 }, color: 'text.secondary', width: { xs: '100%', sm: 'auto' } }}>
+            {session.user.email}
+          </Typography>
+          <Tooltip title="Çıkış Yap">
+            <IconButton color="inherit" onClick={handleLogout}>
+              <LogoutIcon />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 } }}>
+        {errorMessage && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
+            {errorMessage}
+          </Alert>
+        )}
+
+        <Grid container spacing={2.5} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={4}>
+            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper' }}>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', sm: 'center' }
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Hisse Havuzu
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                    {tickers.length}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<ListAltIcon />}
+                  onClick={() => setOpenTickerDialog(true)}
+                  sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
+                >
+                  Yönet
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper' }}>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Son Taramadaki Uygun Hisseler
+                </Typography>
+                <Typography variant="h4" color="success.main" sx={{ fontWeight: 700, mt: 0.5 }}>
+                  {scannedResults ? scannedResults.length : 0}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card
+              elevation={2}
+              sx={{
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                justifyContent: 'space-between',
+                px: 3,
+                py: 2,
+                gap: 2,
+                backgroundColor: 'background.paper'
+              }}
+            >
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Son Güncelleme Bilgisi
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
+                  {scanLog
+                    ? `${new Date(scanLog.scanned_at).toLocaleString('tr-TR')}`
+                    : 'Henüz tarama yapılmadı'}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                onClick={handleScan}
+                disabled={isScanning}
+                sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
+              >
+                {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
+              </Button>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
+            Son Tarama Sonuçları
+          </Typography>
+          <StockListTable stocks={scannedResults} onSelectStock={handleSelectStock} />
+        </Box>
+      </Container>
+
+      <Dialog open={openTickerDialog} onClose={() => setOpenTickerDialog(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700 }}>Hisse Havuzu Yönetimi</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Örn: SASA"
+              value={newSymbol}
+              onChange={(e) => setNewSymbol(e.target.value)}
+            />
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddTicker}>
+              Ekle
+            </Button>
+          </Box>
+          <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+            {tickersList.map((t) => (
+              <ListItem
+                key={t.id}
+                secondaryAction={
+                  <IconButton edge="end" color="error" onClick={() => handleDeleteTicker(t.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                }
+              >
+                <ListItemText primary={t.symbol} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenTickerDialog(false)}>Kapat</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {stockDetails?.name || `${selectedSymbol} Detayları`}
+        </DialogTitle>
+        <DialogContent dividers>
+          {isLoadingDetails && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress aria-label="Hisse detayları yükleniyor" />
+            </Box>
+          )}
+
+          {detailsError && <Alert severity="error">{detailsError}</Alert>}
+
+          {stockDetails && !isLoadingDetails && (
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary">
+                  {stockDetails.symbol} · {stockDetails.currency}
+                  {stockDetails.delayedByMinutes != null && ` · ${stockDetails.delayedByMinutes} dk gecikmeli`}
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
+                  {formatNumber(stockDetails.price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                </Typography>
+                <Typography
+                  color={stockDetails.change == null || stockDetails.change >= 0 ? 'success.main' : 'error.main'}
+                  sx={{ fontWeight: 600 }}
+                >
+                  {stockDetails.change != null && stockDetails.change >= 0 ? '+' : ''}
+                  {formatNumber(stockDetails.change, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({stockDetails.changePercent != null && stockDetails.changePercent >= 0 ? '+' : ''}
+                  {formatNumber(stockDetails.changePercent, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
+                </Typography>
+              </Grid>
+
+              {[
+                ['Açılış', stockDetails.open, 'fiyat'],
+                ['Gün içi düşük', stockDetails.low, 'fiyat'],
+                ['Gün içi yüksek', stockDetails.high, 'fiyat'],
+                ['Önceki kapanış', stockDetails.previousClose, 'fiyat'],
+                ['Hacim', stockDetails.volume, 'adet'],
+                ['3 aylık ort. hacim', stockDetails.averageVolume, 'adet'],
+                ['52 hf. düşük', stockDetails.fiftyTwoWeekLow, 'fiyat'],
+                ['52 hf. yüksek', stockDetails.fiftyTwoWeekHigh, 'fiyat'],
+                ['Piyasa değeri', stockDetails.marketCap, 'para'],
+                ['F/K', stockDetails.trailingPE, 'oran'],
+                ['PD/DD', stockDetails.priceToBook, 'oran']
+              ].map(([label, value, type]) => (
+                <Grid item xs={6} sm={4} key={label}>
+                  <Typography variant="caption" color="text.secondary">
+                    {label}
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {type === 'fiyat' && `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`}
+                    {type === 'adet' && formatNumber(value, { maximumFractionDigits: 0 })}
+                    {type === 'para' && `${formatNumber(value, { maximumFractionDigits: 0 })} ₺`}
+                    {type === 'oran' && formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDetailsOpen(false)}>Kapat</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState(getStoredThemeMode());
 
   const [scannedResults, setScannedResults] = useState([]);
   const [scanLog, setScanLog] = useState(null);
@@ -82,6 +503,42 @@ export default function App() {
   const [stockDetails, setStockDetails] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
+
+  useEffect(() => {
+    window.localStorage.setItem('bist-dashboard-theme-mode', mode);
+    document.documentElement.style.colorScheme = mode;
+  }, [mode]);
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          primary: { main: '#38bdf8' },
+          ...(mode === 'dark'
+            ? {
+                background: {
+                  default: '#020617',
+                  paper: '#0f172a'
+                }
+              }
+            : {
+                background: {
+                  default: '#f8fafc',
+                  paper: '#ffffff'
+                }
+              })
+        },
+        shape: {
+          borderRadius: 10
+        }
+      }),
+    [mode]
+  );
+
+  const toggleMode = () => {
+    setMode((currentMode) => (currentMode === 'dark' ? 'light' : 'dark'));
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -199,332 +656,56 @@ export default function App() {
 
   if (!session) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#0f172a',
-          px: 2
-        }}
-      >
-        <Paper
-          elevation={6}
-          sx={{
-            p: 4,
-            width: '100%',
-            maxWidth: 400,
-            borderRadius: 3,
-            backgroundColor: '#1e293b',
-            color: '#f8fafc',
-            textAlign: 'center'
-          }}
-        >
-          <Box
-            sx={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              backgroundColor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px auto'
-            }}
-          >
-            <LockOutlinedIcon sx={{ color: '#fff', fontSize: 28 }} />
-          </Box>
-          <Typography component="h1" variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-            BIST Dashboard
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
-            {isSignUp ? 'Yeni hesap oluşturun (v1.0.0)' : 'Supabase hesabınızla giriş yapın (v1.0.0)'}
-          </Typography>
-
-          <Box component="form" onSubmit={handleAuth} noValidate>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="E-Posta Adresi"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              sx={{
-                '& .MuiInputBase-root': { color: '#fff' },
-                '& .MuiInputLabel-root': { color: '#94a3b8' },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#334155' },
-                  '&:hover fieldset': { borderColor: '#64748b' }
-                }
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Şifre"
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{
-                '& .MuiInputBase-root': { color: '#fff' },
-                '& .MuiInputLabel-root': { color: '#94a3b8' },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#334155' },
-                  '&:hover fieldset': { borderColor: '#64748b' }
-                }
-              }}
-            />
-
-            {authError && (
-              <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
-                {authError}
-              </Typography>
-            )}
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              sx={{ mt: 3, mb: 1, py: 1.2, fontWeight: 'bold', borderRadius: 2 }}
-            >
-              {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
-            </Button>
-
-            <Button
-              color="inherit"
-              size="small"
-              onClick={() => setIsSignUp(!isSignUp)}
-              sx={{ color: '#94a3b8', textTransform: 'none', mt: 1 }}
-            >
-              {isSignUp ? 'Zaten hesabınız var mı? Giriş Yapın' : 'Hesabınız yok mu? Kayıt Olun'}
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
+      <ThemeProvider theme={theme}>
+        <CssBaseline enableColorScheme />
+        <AuthScreen
+          isSignUp={isSignUp}
+          appVersion={appVersion}
+          mode={mode}
+          onToggleMode={toggleMode}
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          authError={authError}
+          handleAuth={handleAuth}
+          setIsSignUp={setIsSignUp}
+        />
+      </ThemeProvider>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8fafc', pb: 6 }}>
-      <AppBar position="static" elevation={1} sx={{ backgroundColor: '#0f172a' }}>
-        <Toolbar>
-          <ShowChartIcon sx={{ mr: 1.5, color: '#38bdf8' }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700 }}>
-            BIST Taraması
-          </Typography>
-          <Chip
-            label="v1.0.0"
-            size="small"
-            color="primary"
-            variant="outlined"
-            sx={{ mr: 2, borderColor: '#38bdf8', color: '#38bdf8' }}
-          />
-          <Typography variant="body2" sx={{ mr: 2, color: '#94a3b8' }}>
-            {session.user.email}
-          </Typography>
-          <Tooltip title="Çıkış Yap">
-            <IconButton color="inherit" onClick={handleLogout}>
-              <LogoutIcon />
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="xl" sx={{ mt: 4 }}>
-        {errorMessage && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
-            {errorMessage}
-          </Alert>
-        )}
-
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={4}>
-            <Card elevation={2} sx={{ borderRadius: 2 }}>
-              <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Hisse Havuzu
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
-                    {tickers.length}
-                  </Typography>
-                </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<ListAltIcon />}
-                  onClick={() => setOpenTickerDialog(true)}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Yönet
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <Card elevation={2} sx={{ borderRadius: 2 }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary">
-                  Son Taramadaki Uygun Hisseler
-                </Typography>
-                <Typography variant="h4" color="success.main" sx={{ fontWeight: 700, mt: 0.5 }}>
-                  {scannedResults ? scannedResults.length : 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                px: 3,
-                py: 2
-              }}
-            >
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Son Güncelleme Bilgisi
-                </Typography>
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: '#334155', mt: 0.5 }}>
-                  {scanLog
-                    ? `${new Date(scanLog.scanned_at).toLocaleString('tr-TR')}`
-                    : 'Henüz tarama yapılmadı'}
-                </Typography>
-              </Box>
-              <Button
-                variant="contained"
-                startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                onClick={handleScan}
-                disabled={isScanning}
-                sx={{ borderRadius: 2 }}
-              >
-                {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
-              </Button>
-            </Card>
-          </Grid>
-        </Grid>
-
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
-            Son Tarama Sonuçları
-          </Typography>
-          <StockListTable stocks={scannedResults} onSelectStock={handleSelectStock} />
-        </Box>
-      </Container>
-
-      <Dialog open={openTickerDialog} onClose={() => setOpenTickerDialog(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ fontWeight: 700 }}>Hisse Havuzu Yönetimi</DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Örn: SASA"
-              value={newSymbol}
-              onChange={(e) => setNewSymbol(e.target.value)}
-            />
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddTicker}>
-              Ekle
-            </Button>
-          </Box>
-          <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-            {tickers.map((t) => (
-              <ListItem
-                key={t.id}
-                secondaryAction={
-                  <IconButton edge="end" color="error" onClick={() => handleDeleteTicker(t.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                }
-              >
-                <ListItemText primary={t.symbol} />
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenTickerDialog(false)}>Kapat</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          {stockDetails?.name || `${selectedSymbol} Detayları`}
-        </DialogTitle>
-        <DialogContent dividers>
-          {isLoadingDetails && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress aria-label="Hisse detayları yükleniyor" />
-            </Box>
-          )}
-
-          {detailsError && <Alert severity="error">{detailsError}</Alert>}
-
-          {stockDetails && !isLoadingDetails && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary">
-                  {stockDetails.symbol} · {stockDetails.currency}
-                  {stockDetails.delayedByMinutes != null && ` · ${stockDetails.delayedByMinutes} dk gecikmeli`}
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
-                  {formatNumber(stockDetails.price, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
-                </Typography>
-                <Typography
-                  color={stockDetails.change == null || stockDetails.change >= 0 ? 'success.main' : 'error.main'}
-                  sx={{ fontWeight: 600 }}
-                >
-                  {stockDetails.change != null && stockDetails.change >= 0 ? '+' : ''}
-                  {formatNumber(stockDetails.change, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({stockDetails.changePercent != null && stockDetails.changePercent >= 0 ? '+' : ''}
-                  {formatNumber(stockDetails.changePercent, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
-                </Typography>
-              </Grid>
-
-              {[
-                ['Açılış', stockDetails.open, 'fiyat'],
-                ['Gün içi düşük', stockDetails.low, 'fiyat'],
-                ['Gün içi yüksek', stockDetails.high, 'fiyat'],
-                ['Önceki kapanış', stockDetails.previousClose, 'fiyat'],
-                ['Hacim', stockDetails.volume, 'adet'],
-                ['3 aylık ort. hacim', stockDetails.averageVolume, 'adet'],
-                ['52 hf. düşük', stockDetails.fiftyTwoWeekLow, 'fiyat'],
-                ['52 hf. yüksek', stockDetails.fiftyTwoWeekHigh, 'fiyat'],
-                ['Piyasa değeri', stockDetails.marketCap, 'para'],
-                ['F/K', stockDetails.trailingPE, 'oran'],
-                ['PD/DD', stockDetails.priceToBook, 'oran'],
-              ].map(([label, value, type]) => (
-                <Grid item xs={6} sm={4} key={label}>
-                  <Typography variant="caption" color="text.secondary">
-                    {label}
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {type === 'fiyat' && `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`}
-                    {type === 'adet' && formatNumber(value, { maximumFractionDigits: 0 })}
-                    {type === 'para' && `${formatNumber(value, { maximumFractionDigits: 0 })} ₺`}
-                    {type === 'oran' && formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Typography>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsDetailsOpen(false)}>Kapat</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    <ThemeProvider theme={theme}>
+      <CssBaseline enableColorScheme />
+      <DashboardShell
+        appVersion={appVersion}
+        mode={mode}
+        onToggleMode={toggleMode}
+        session={session}
+        handleLogout={handleLogout}
+        errorMessage={errorMessage}
+        setErrorMessage={setErrorMessage}
+        tickers={tickers}
+        setOpenTickerDialog={setOpenTickerDialog}
+        scannedResults={scannedResults}
+        scanLog={scanLog}
+        isScanning={isScanning}
+        handleScan={handleScan}
+        handleSelectStock={handleSelectStock}
+        openTickerDialog={openTickerDialog}
+        setNewSymbol={setNewSymbol}
+        newSymbol={newSymbol}
+        handleAddTicker={handleAddTicker}
+        handleDeleteTicker={handleDeleteTicker}
+        tickersList={tickers}
+        isDetailsOpen={isDetailsOpen}
+        setIsDetailsOpen={setIsDetailsOpen}
+        selectedSymbol={selectedSymbol}
+        stockDetails={stockDetails}
+        isLoadingDetails={isLoadingDetails}
+        detailsError={detailsError}
+      />
+    </ThemeProvider>
   );
 }
