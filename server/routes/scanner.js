@@ -14,6 +14,20 @@ async function scanTickers(tickers) {
       const ticker = tickers[nextIndex++];
       const { data: match } = await scanOne(ticker.symbol);
       if (match) {
+        let hasNegativeChange = false;
+
+        try {
+          // Teknik olarak uygun olsa bile günlük değişimi negatif olanları ele.
+          const details = await getStockDetails(match.Hisse);
+          hasNegativeChange = Number.isFinite(details?.change) && details.change < 0;
+        } catch (detailErr) {
+          console.error(`${match.Hisse} detay filtresi alınamadı:`, detailErr.message);
+        }
+
+        if (hasNegativeChange) {
+          continue;
+        }
+
         matches.push({
           symbol: match.Hisse,
           price: match.Fiyat,
