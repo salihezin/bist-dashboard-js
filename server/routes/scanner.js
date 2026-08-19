@@ -129,6 +129,14 @@ router.post('/scan-all', async (req, res) => {
 
     if (logErr) throw logErr;
 
+    // Eski tarama sonuçlarını temizle
+    const { error: deleteErr } = await supabase
+      .from('scan_results')
+      .delete()
+      .gte('id', 0);
+
+    if (deleteErr) throw deleteErr;
+
     // 2. Eşleşen sonuçları kaydet
     if (matchedStocks.length > 0) {
       const recordsToInsert = matchedStocks.map((stock) => ({
