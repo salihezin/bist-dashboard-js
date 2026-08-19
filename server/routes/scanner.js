@@ -147,7 +147,7 @@ router.post('/scan-all', async (req, res) => {
     const { error: deleteErr } = await supabase
       .from('scan_results')
       .delete()
-      .gte('id', 0);
+      .not('id', 'is', null);
 
     if (deleteErr) throw deleteErr;
 
