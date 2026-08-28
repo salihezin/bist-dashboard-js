@@ -248,15 +248,17 @@ function DashboardShell({
   const [almaDistRange, setAlmaDistRange] = useState([2.0, 6.0]);
   const [vwmaDistRange, setVwmaDistRange] = useState([2.0, 6.0]);
 
-  const handleAlmaDistChange = (event, newValue) => {
-    console.log('Alma Mesafe Aralığı değişti:', newValue);
+  const handleAlmaDistChange = (_event, newValue) => {
     setAlmaDistRange(newValue);
   };
 
-  const handleVwmaDistChange = (event, newValue) => {
-    console.log('VWMA Mesafe Aralığı değişti:', newValue);
+  const handleVwmaDistChange = (_event, newValue) => {
     setVwmaDistRange(newValue);
   };
+
+  console.log('almaDistRange:', almaDistRange);
+  console.log('vwmaDistRange:', vwmaDistRange);
+  
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', pb: 6 }}>
       <AppBar position="static" elevation={1} sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
