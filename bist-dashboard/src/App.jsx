@@ -346,9 +346,8 @@ function DashboardShell({
               <CardContent
                 sx={{
                   display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
+                  flexDirection: 'column',
                   gap: 2,
-                  justifyContent: 'space-between',
                   alignItems: { xs: 'flex-start', sm: 'center' }
                 }}
               >
@@ -367,7 +366,7 @@ function DashboardShell({
                   startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
                   onClick={handleScan}
                   disabled={isScanning}
-                  sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
+                  sx={{ borderRadius: 2, width: '100%' }}
                 >
                   {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
                 </Button>
