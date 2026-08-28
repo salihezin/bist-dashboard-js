@@ -360,17 +360,6 @@ function DashboardShell({
                       : 'Henüz tarama yapılmadı'}
                   </Typography>
                 </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                  onClick={handleScan}
-                  disabled={isScanning}
-                  sx={{ borderRadius: 2, width: '100%' }}
-                >
-                  {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
-                </Button>
-
                 <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                     <Typography variant="caption" sx={{ fontWeight: 600 }}>
@@ -416,6 +405,15 @@ function DashboardShell({
                     size="small"
                   />
                 </Box>
+                <Button
+                  variant="contained"
+                  startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleScan}
+                  disabled={isScanning}
+                  sx={{ borderRadius: 2, width: '100%' }}
+                >
+                  {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
+                </Button>
               </CardContent>
             </Card>
           </Grid>
