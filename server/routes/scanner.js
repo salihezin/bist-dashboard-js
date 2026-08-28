@@ -5,14 +5,14 @@ import { getStockDetails, scanOne, scanGainer } from '../services/scanner.js';
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
 
-async function scanTickers(tickers) {
+async function scanTickers(tickers, minAlmaDist = 2.0, maxAlmaDist = 6.0, minVwmaDist = 2.0, maxVwmaDist = 6.0) {
   const matches = [];
   let nextIndex = 0;
 
-  async function worker() {
+  async function worker(minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist) {
     while (nextIndex < tickers.length) {
       const ticker = tickers[nextIndex++];
-      const { data: match } = await scanOne(ticker.symbol);
+      const { data: match } = await scanOne(ticker.symbol, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist);
       if (match) {
         let hasNegativeChange = false;
 
@@ -41,7 +41,7 @@ async function scanTickers(tickers) {
   }
 
   await Promise.all(
-    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, worker)
+    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, () => worker(minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist))
   );
   return matches;
 }
@@ -152,8 +152,19 @@ router.get('/latest-results', async (req, res) => {
 
 router.post('/scan-all', async (req, res) => {
   try {
-    const { user_id, userId: bodyUserId } = req.body || {};
+    const {
+      user_id,
+      userId: bodyUserId,
+      minAlmaDist: bodyMinAlmaDist,
+      maxAlmaDist: bodyMaxAlmaDist,
+      minVwmaDist: bodyMinVwmaDist,
+      maxVwmaDist: bodyMaxVwmaDist
+    } = req.body || {};
     const userId = user_id || bodyUserId || null;
+    const minAlmaDist = bodyMinAlmaDist ?? 2.0;
+    const maxAlmaDist = bodyMaxAlmaDist ?? 6.0;
+    const minVwmaDist = bodyMinVwmaDist ?? 2.0;
+    const maxVwmaDist = bodyMaxVwmaDist ?? 6.0;
 
     const { data: tickersData, error: tickerError } = await supabase
       .from('tickers')
@@ -163,7 +174,7 @@ router.post('/scan-all', async (req, res) => {
 
     // 538 hisselik havuzda seri istekler taramayı dakikalarca uzatıyordu.
     // Yahoo'yu zorlamadan beş eşzamanlı istek kullanıyoruz.
-    const matchedStocks = await scanTickers(tickersData);
+    const matchedStocks = await scanTickers(tickersData, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist);
 
     // 1. Log kaydı
     const logPayload = { scanned_at: new Date().toISOString() };

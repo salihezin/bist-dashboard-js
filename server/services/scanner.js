@@ -164,7 +164,7 @@ function calculateADX(candles, period = 14) {
 // ANA TARAMA FONKSİYONU
 // ==========================================
 
-export async function scanOne(symbol) {
+export async function scanOne(symbol, minAlmaDist = 2.0, maxAlmaDist = 6.0, minVwmaDist = 2.0, maxVwmaDist = 6.0) {
   try {
     const formattedSymbol = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
 
@@ -231,8 +231,8 @@ export async function scanOne(symbol) {
     const vwmaDist = ((lastBar.close - lastVwma21) / lastVwma21) * 100;
 
     // Kriter Kontrolü
-    const isAlmaMatch = almaDist >= 2.0 && almaDist <= 6.0;
-    const isVwmaMatch = vwmaDist >= 2.0 && vwmaDist <= 6.0;
+    const isAlmaMatch = almaDist >= minAlmaDist && almaDist <= maxAlmaDist;
+    const isVwmaMatch = vwmaDist >= minVwmaDist && vwmaDist <= maxVwmaDist;
     const isBullishCandle = lastBar.close > lastBar.open;
 
     if (isAlmaMatch && isVwmaMatch && isBullishCandle) {

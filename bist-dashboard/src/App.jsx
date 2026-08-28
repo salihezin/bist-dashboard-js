@@ -39,7 +39,8 @@ import {
   Alert,
   CssBaseline,
   ThemeProvider,
-  createTheme
+  createTheme,
+  Slider
 } from '@mui/material';
 
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -243,6 +244,19 @@ function DashboardShell({
   setGainersError,    
   handleFetchGainers  
 }) {
+
+  const [almaDistRange, setAlmaDistRange] = useState([2.0, 6.0]);
+  const [vwmaDistRange, setVwmaDistRange] = useState([2.0, 6.0]);
+
+  const handleAlmaDistChange = (event, newValue) => {
+    console.log('Alma Mesafe Aralığı değişti:', newValue);
+    setAlmaDistRange(newValue);
+  };
+
+  const handleVwmaDistChange = (event, newValue) => {
+    console.log('VWMA Mesafe Aralığı değişti:', newValue);
+    setVwmaDistRange(newValue);
+  };
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', pb: 6 }}>
       <AppBar position="static" elevation={1} sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
@@ -361,6 +375,21 @@ function DashboardShell({
               >
                 {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
               </Button>
+              {/* Buraya 2 numeric input koyacağız default değerleri 2 ve 6 */}
+              <Slider
+                getAriaLabel={() => 'Alma Mesafe Aralığı'}
+                value={almaDistRange}
+                onChange={handleAlmaDistChange}
+                valueLabelDisplay="auto"
+                getAriaValueText={(value) => `${value}%`}
+              />
+              <Slider
+                getAriaLabel={() => 'Vwma Mesafe Aralığı'}
+                value={vwmaDistRange}
+                onChange={handleVwmaDistChange}
+                valueLabelDisplay="auto"
+                getAriaValueText={(value) => `${value}%`}
+              />
             </Card>
           </Grid>
         </Grid>
