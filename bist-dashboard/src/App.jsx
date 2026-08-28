@@ -342,54 +342,36 @@ function DashboardShell({
           </Grid>
 
           <Grid item xs={12} sm={4}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'stretch', sm: 'center' },
-                justifyContent: 'space-between',
-                px: 3,
-                py: 2,
-                gap: 2,
-                backgroundColor: 'background.paper'
-              }}
-            >
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Son Güncelleme Bilgisi
-                </Typography>
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
-                  {scanLog
-                    ? `${new Date(scanLog.scanned_at).toLocaleString('tr-TR')}`
-                    : 'Henüz tarama yapılmadı'}
-                </Typography>
-              </Box>
-              <Button
-                variant="contained"
-                startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                onClick={handleScan}
-                disabled={isScanning}
-                sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
+            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper' }}>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', sm: 'center' }
+                }}
               >
-                {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
-              </Button>
-              {/* Buraya 2 numeric input koyacağız default değerleri 2 ve 6 */}
-              <Slider
-                getAriaLabel={() => 'Alma Mesafe Aralığı'}
-                value={almaDistRange}
-                onChange={handleAlmaDistChange}
-                valueLabelDisplay="auto"
-                getAriaValueText={(value) => `${value}%`}
-              />
-              <Slider
-                getAriaLabel={() => 'Vwma Mesafe Aralığı'}
-                value={vwmaDistRange}
-                onChange={handleVwmaDistChange}
-                valueLabelDisplay="auto"
-                getAriaValueText={(value) => `${value}%`}
-              />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Son Güncelleme Bilgisi
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
+                    {scanLog
+                      ? `${new Date(scanLog.scanned_at).toLocaleString('tr-TR')}`
+                      : 'Henüz tarama yapılmadı'}
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleScan}
+                  disabled={isScanning}
+                  sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
+                >
+                  {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
+                </Button>
+              </CardContent>
             </Card>
           </Grid>
         </Grid>
@@ -424,41 +406,52 @@ function DashboardShell({
             </Alert>
           )}
 
-          <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-              <Box component="thead">
-                <Box component="tr" sx={{ backgroundColor: 'action.hover' }}>
-                  <Box component="th" sx={{ textAlign: 'left', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Hisse</Box>
-                  <Box component="th" sx={{ textAlign: 'right', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Fiyat</Box>
-                  <Box component="th" sx={{ textAlign: 'right', p: 1.5, fontSize: 13, color: 'text.secondary' }}>Değişim %</Box>
+          <Paper elevation={2} sx={{ borderRadius: 2, p: 3, mb: 4, backgroundColor: 'background.paper' }}>
+            <Grid container spacing={4}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    Alma Mesafe Aralığı
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {almaDistRange[0].toFixed(2)}% – {almaDistRange[1].toFixed(2)}%
+                  </Typography>
                 </Box>
-              </Box>
-              <Box component="tbody">
-                {gainers.length === 0 && !isLoadingGainers && (
-                  <Box component="tr">
-                    <Box component="td" colSpan={3} sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                      Henüz veri yok
-                    </Box>
-                  </Box>
-                )}
-                {gainers.map((g) => (
-                  <Box
-                    component="tr"
-                    key={g.Hisse}
-                    onClick={() => handleSelectStock(g.Hisse)}
-                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
-                  >
-                    <Box component="td" sx={{ p: 1.5, fontWeight: 600 }}>{g.Hisse}</Box>
-                    <Box component="td" sx={{ p: 1.5, textAlign: 'right' }}>
-                      {formatNumber(g.Fiyat, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
-                    </Box>
-                    <Box component="td" sx={{ p: 1.5, textAlign: 'right', color: 'success.main', fontWeight: 600 }}>
-                      +{formatNumber(g.DegisimYuzde, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
+                <Slider
+                  getAriaLabel={() => 'Alma Mesafe Aralığı'}
+                  value={almaDistRange}
+                  onChange={handleAlmaDistChange}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => `${value.toFixed(2)}%`}
+                  getAriaValueText={(value) => `${value}%`}
+                  min={0.10}
+                  max={10}
+                  step={0.10}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    VWMA Mesafe Aralığı
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {vwmaDistRange[0].toFixed(2)}% – {vwmaDistRange[1].toFixed(2)}%
+                  </Typography>
+                </Box>
+                <Slider
+                  getAriaLabel={() => 'Vwma Mesafe Aralığı'}
+                  value={vwmaDistRange}
+                  onChange={handleVwmaDistChange}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => `${value.toFixed(2)}%`}
+                  getAriaValueText={(value) => `${value}%`}
+                  min={0.10}
+                  max={10}
+                  step={0.10}
+                />
+              </Grid>
+            </Grid>
           </Paper>
         </Box>
       </Container>
