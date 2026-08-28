@@ -347,8 +347,7 @@ function DashboardShell({
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 2,
-                  alignItems: { xs: 'flex-start', sm: 'center' }
+                  gap: 2
                 }}
               >
                 <Box>
@@ -361,6 +360,7 @@ function DashboardShell({
                       : 'Henüz tarama yapılmadı'}
                   </Typography>
                 </Box>
+
                 <Button
                   variant="contained"
                   startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
@@ -370,6 +370,52 @@ function DashboardShell({
                 >
                   {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
                 </Button>
+
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      Alma Mesafe Aralığı
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {almaDistRange[0].toFixed(2)}% – {almaDistRange[1].toFixed(2)}%
+                    </Typography>
+                  </Box>
+                  <Slider
+                    getAriaLabel={() => 'Alma Mesafe Aralığı'}
+                    value={almaDistRange}
+                    onChange={handleAlmaDistChange}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value.toFixed(2)}%`}
+                    getAriaValueText={(value) => `${value}%`}
+                    min={0.10}
+                    max={10}
+                    step={0.10}
+                    size="small"
+                  />
+                </Box>
+
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      VWMA Mesafe Aralığı
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {vwmaDistRange[0].toFixed(2)}% – {vwmaDistRange[1].toFixed(2)}%
+                    </Typography>
+                  </Box>
+                  <Slider
+                    getAriaLabel={() => 'Vwma Mesafe Aralığı'}
+                    value={vwmaDistRange}
+                    onChange={handleVwmaDistChange}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(value) => `${value.toFixed(2)}%`}
+                    getAriaValueText={(value) => `${value}%`}
+                    min={0.10}
+                    max={10}
+                    step={0.10}
+                    size="small"
+                  />
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -404,54 +450,6 @@ function DashboardShell({
               {gainersError}
             </Alert>
           )}
-
-          <Paper elevation={2} sx={{ borderRadius: 2, p: 3, mb: 4, backgroundColor: 'background.paper' }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    Alma Mesafe Aralığı
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {almaDistRange[0].toFixed(2)}% – {almaDistRange[1].toFixed(2)}%
-                  </Typography>
-                </Box>
-                <Slider
-                  getAriaLabel={() => 'Alma Mesafe Aralığı'}
-                  value={almaDistRange}
-                  onChange={handleAlmaDistChange}
-                  valueLabelDisplay="auto"
-                  valueLabelFormat={(value) => `${value.toFixed(2)}%`}
-                  getAriaValueText={(value) => `${value}%`}
-                  min={0.10}
-                  max={10}
-                  step={0.10}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    VWMA Mesafe Aralığı
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {vwmaDistRange[0].toFixed(2)}% – {vwmaDistRange[1].toFixed(2)}%
-                  </Typography>
-                </Box>
-                <Slider
-                  getAriaLabel={() => 'Vwma Mesafe Aralığı'}
-                  value={vwmaDistRange}
-                  onChange={handleVwmaDistChange}
-                  valueLabelDisplay="auto"
-                  valueLabelFormat={(value) => `${value.toFixed(2)}%`}
-                  getAriaValueText={(value) => `${value}%`}
-                  min={0.10}
-                  max={10}
-                  step={0.10}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
         </Box>
       </Container>
 
