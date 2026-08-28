@@ -256,9 +256,6 @@ function DashboardShell({
     setVwmaDistRange(newValue);
   };
 
-  console.log('almaDistRange:', almaDistRange);
-  console.log('vwmaDistRange:', vwmaDistRange);
-  
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', pb: 6 }}>
       <AppBar position="static" elevation={1} sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
@@ -410,7 +407,7 @@ function DashboardShell({
                 <Button
                   variant="contained"
                   startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                  onClick={handleScan}
+                  onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
                   disabled={isScanning}
                   sx={{ borderRadius: 2, width: '100%' }}
                 >
@@ -652,11 +649,11 @@ export default function App() {
     }
   }
 
-  const handleScan = async () => {
+  const handleScan = async (minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist) => {
     try {
       setIsScanning(true);
       setErrorMessage('');
-      const data = await runScanAll(session?.user?.id);
+      const data = await runScanAll(session?.user?.id, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist);
       setScannedResults(formatStockData(data?.results));
       setScanLog(data?.log || null);
     } catch (err) {
@@ -777,7 +774,7 @@ export default function App() {
         scannedResults={scannedResults}
         scanLog={scanLog}
         isScanning={isScanning}
-        handleScan={handleScan}
+        handleScan={(minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist) => handleScan(minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist)}
         handleSelectStock={handleSelectStock}
         openTickerDialog={openTickerDialog}
         setNewSymbol={setNewSymbol}

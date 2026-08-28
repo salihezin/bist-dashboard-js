@@ -9,8 +9,8 @@ export async function getLatestResults() {
 }
 
 // Yeni tarama başlatır.
-export async function runScanAll(userId) {
-  const response = await axios.post(`${API_BASE}/scan-all`, { userId });
+export async function runScanAll(userId, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist) {
+  const response = await axios.post(`${API_BASE}/scan-all`, { userId, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist });
   return response.data;
 }
 

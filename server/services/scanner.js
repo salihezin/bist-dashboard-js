@@ -216,11 +216,11 @@ export async function scanOne(symbol, minAlmaDist = 2.0, maxAlmaDist = 6.0, minV
     const adxSeries = calculateADX(validCandles, 14);
 
     // Son Bar (Güncel) Verileri
-    const lastBar = validCandles[validCandles.length - 1];
-    const lastAlma9 = alma9Series[alma9Series.length - 1];
-    const lastVwma21 = vwma21Series[vwma21Series.length - 1];
-    const lastAdx = adxSeries.length > 0 ? adxSeries[adxSeries.length - 1] : null;
-    const lastCmf = cmfSeries.length > 0 ? cmfSeries[cmfSeries.length - 1] : null;
+    const lastBar = validCandles.at(-1);
+    const lastAlma9 = alma9Series.at(-1);
+    const lastVwma21 = vwma21Series.at(-1);
+    const lastAdx = adxSeries.length > 0 ? adxSeries.at(-1) : null;
+    const lastCmf = cmfSeries.length > 0 ? cmfSeries.at(-1) : null;
 
     // Mesafeleri Hesapla
     if (!Number.isFinite(lastAlma9) || !Number.isFinite(lastVwma21) || lastAlma9 === 0 || lastVwma21 === 0) {
