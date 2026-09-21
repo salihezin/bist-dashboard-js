@@ -1,0 +1,96 @@
+import java.util.*;
+import java.time.*;
+
+class Candle {
+    double open, high, low, close, volume;
+    LocalDate date;
+    Candle(double o, double h, double l, double c, double v, LocalDate d) {
+        open = o; high = h; low = l; close = c; volume = v; date = d;
+    }
+}
+
+public class V10Strategy {
+
+    // ===============================
+    // 📊 İNDİKATÖR FONKSİYONLARI
+    // ===============================
+    public static List<Double> calculateLowerBand(List<Candle> candles, int length, double std) {
+        List<Double> bands = new ArrayList<>();
+        for (int i = length - 1; i < candles.size(); i++) {
+            List<Candle> slice = candles.subList(i - length + 1, i + 1);
+            double sma = slice.stream().mapToDouble(c -> c.close).average().orElse(0);
+            double variance = slice.stream().mapToDouble(c -> Math.pow(c.close - sma, 2)).sum() / length;
+            double stdDev = Math.sqrt(variance);
+            bands.add(sma - stdDev * std);
+        }
+        return bands;
+    }
+
+    public static List<Double> calculateVWMA(List<Candle> candles, int period) {
+        List<Double> vwma = new ArrayList<>();
+        for (int i = period - 1; i < candles.size(); i++) {
+            List<Candle> slice = candles.subList(i - period + 1, i + 1);
+            double sumPV = slice.stream().mapToDouble(c -> c.close * c.volume).sum();
+            double sumV = slice.stream().mapToDouble(c -> c.volume).sum();
+            vwma.add(sumV == 0 ? 0 : sumPV / sumV);
+        }
+        return vwma;
+    }
+
+    // ===============================
+    // 🎯 V10 GİRİŞ KOŞULU (örnek)
+    // ===============================
+    public static boolean checkEntrySignal(List<Candle> candles, int i, List<Double> lowerBands) {
+        if (i < 3) return false;
+        Candle bbTouch = candles.get(i - 3);
+        Candle red = candles.get(i - 2);
+        Candle green1 = candles.get(i - 1);
+        Candle curr = candles.get(i);
+
+        boolean condBB = bbTouch.low <= lowerBands.get(i - 3);
+        boolean condRed = red.close < red.open;
+        boolean condGreen1 = green1.close > green1.open;
+        boolean condForm = (red.close < red.open && curr.close > curr.open); // örnek formasyon
+        double hedefGiris = green1.close * 1.02;
+        boolean condGiris = curr.close >= hedefGiris;
+
+        return condBB && condRed && condGreen1 && condForm && condGiris;
+    }
+
+    // ===============================
+    // 📊 BIST GENİŞ LİSTE
+    // ===============================
+    public static final String[] HISSE_LISTESI = {
+        "A1CAP.IS","A1YEN.IS","AAGYO.IS","ACSEL.IS","ADEL.IS","ADESE.IS","ADGYO.IS","AEFES.IS",
+        "AFYON.IS","AGESA.IS","AGHOL.IS","AGYO.IS","AHGAZ.IS","AHSGY.IS","AKBNK.IS","AKCNS.IS",
+        "AKENR.IS","AKFGY.IS","AKFIS.IS","AKFYE.IS","AKHAN.IS","AKMGY.IS","AKSA.IS","AKSEN.IS",
+        "AKSGY.IS","AKSUE.IS","AKYHO.IS","ALARK.IS","ALBRK.IS","ALBTN.IS","ALCAR.IS","ALCTL.IS",
+        "ALFAS.IS","ALGYO.IS","ALKA.IS","ALKIM.IS","ALKLC.IS","ALTNY.IS","ALVES.IS","ANELE.IS",
+        "ANGEN.IS","ANSGR.IS","ARASE.IS","ARCLK.IS","ARDYZ.IS","ARENA.IS","ARFYE.IS","ARMGD.IS",
+        "ARSAN.IS","ARTMS.IS","ARZUM.IS","ASELS.IS","ASGYO.IS","ASTOR.IS","ASUZU.IS","ATAGY.IS",
+        "ATAKP.IS","ATATP.IS","ATATR.IS","ATEKS.IS","ATLAS.IS","ATSYH.IS","AVGYO.IS","AVHOL.IS",
+        "AVOD.IS","AVPGY.IS","AVTUR.IS","AYCES.IS","AYDEM.IS","AYEN.IS","AYES.IS","AYGAZ.IS",
+        "AZTEK.IS","BAGFS.IS","BAHKM.IS","BAKAB.IS","BALSU.IS","BARMA.IS","BASCM.IS","BASGZ.IS",
+        "BAYRK.IS","BEGYO.IS","BERA.IS","BESLR.IS","BESTE.IS","BETAE.IS","BEYAZ.IS","BFREN.IS",
+        "BIENY.IS","BIGCH.IS","BIGEN.IS","BIGTK.IS","BIMAS.IS","BINBN.IS","BINHO.IS","BIOEN.IS",
+        "BIZIM.IS","BJKAS.IS","BLUME.IS","BMSCH.IS","BMSTL.IS","BNTAS.IS","BORLS.IS","BORSK.IS",
+        "BOSSA.IS","BRISA.IS","BRKO.IS","BRKSN.IS","BRKVY.IS","BRLSM.IS","BRMEN.IS","BRSAN.IS",
+        "BSOKE.IS","BTCIM.IS","BUCIM.IS","BULGS.IS","BURCE.IS","BURVA.IS","BVSAN.IS","BYDNR.IS",
+        "CANTE.IS","CASA.IS","CATES.IS","CCOLA.IS","CELHA.IS","CEMAS.IS","CEMTS.IS","CEMZY.IS",
+        "CEOEM.IS","CGCAM.IS","CIMSA.IS","CITAS.IS","CLEBI.IS","CMBTN.IS","CONSE.IS","COSMO.IS",
+        "CRDFA.IS","CRFSA.IS","CUSAN.IS","CVKMD.IS","CWENE.IS","DAGI.IS","DAPGM.IS","DARDL.IS",
+        "DCTTR.IS","DENGE.IS","DERHL.IS","DERIM.IS","DESA.IS","DESPC.IS","DEVA.IS","DGATE.IS",
+        "DGGYO.IS","DGNMO.IS","DITAS.IS","DMLKTG.IS","DMRGD.IS","DMSAS.IS","DNISI.IS","DOAS.IS",
+        "DOCO.IS","DOFER.IS","DOFRB.IS","DOGUB.IS","DOHOL.IS","DOKTA.IS","DSTKF.IS","DUNYH.IS",
+        "DURDO.IS","DURKN.IS","DYOBY.IS","DZGYO.IS","EBEBK.IS","ECILC.IS","ECOGR.IS","EDATA.IS",
+        "EDIP.IS","EFOR.IS","EGEEN.IS","EGEGY.IS","EGEPO.IS","EGGUB.IS","EGPRO.IS","EGSER.IS",
+        "EKDMR.IS","EKGYO.IS","EKIM.IS","EKIZ.IS","EKOS.IS","EKSUN.IS","ELITE.IS","EMKEL.IS",
+        "EMNIS.IS","EMPAE.IS","ENDAE.IS","ENERY.IS","ENJSA.IS","ENKAI.IS","ENPRA.IS","ENSRI.IS",
+        "ENTRA.IS","EPLAS.IS","ERBOS.IS","ERCB.IS","EREGL.IS","ERSU.IS","ESCAR.IS","ESCOM.IS",
+        "ESEN.IS","ETILR.IS","EUHOL.IS","EUKYO.IS","EUPWR.IS","EUREN.IS","EUYO.IS","EYGYO.IS",
+        "FADE.IS","FENER.IS","FLAP.IS","FMIZP.IS","FORTE.IS","FRIGO.IS","FRMPL.IS","FROTO.IS",
+        "FZLGY.IS","GARAN.IS","GARFA.IS","GATEG.IS","GEDIK.IS","GEDZA.IS","GENIL.IS","GENKM.IS",
+        "GENTS.IS","GEREL.IS","GESAN.IS","GIPTA.IS","GLBMD.IS","GLCVY.IS","GLRMK.IS","GLRYH.IS",
+        "GLYHO.IS","GMTAS.IS","GOKNR.IS","GOLDA.IS","GOLTS.IS","GOODY.IS","GOZDE.IS","GRNYO.IS",
+        "GRSEL.IS","GRTHO.IS","GSDDE.IS","GSDHO.IS","GSRAY.IS","GUBRF.IS","GUNDG.IS","GWIND.IS",
+        "GZNMI.IS","HALKB.IS","HATEK.IS","HATSN.IS","HDFGS.IS","HEDEF.IS","HEKTS.IS
