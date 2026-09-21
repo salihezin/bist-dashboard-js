@@ -1,0 +1,21 @@
+import React, { useState } from 'react';
+import { runV10Scan } from './v10_strategy';
+
+export default function Dashboard() {
+  const [result, setResult] = useState(null);
+
+  const handleScan = async () => {
+    const res = await runV10Scan("BIMAS.IS"); // örnek hisse
+    setResult(res);
+  };
+
+  return (
+    <div>
+      <h1>BIST Taraması</h1>
+      <button onClick={handleScan}>🚀 V10 Tarama</button>
+      {result && (
+        <pre>{JSON.stringify(result, null, 2)}</pre>
+      )}
+    </div>
+  );
+}
