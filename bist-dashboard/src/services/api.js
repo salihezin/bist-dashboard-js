@@ -40,4 +40,12 @@ export async function getStockDetails(symbol) {
 export async function getGainers(minPercent = 9.5) {
   const { data } = await axios.get(`${API_BASE}/gainers`, { params: { min: minPercent } });
   return data;
+}/*
+  bist-dashboard/src/services/api.js dosyasının EN SONUNA ekle:
+*/
+
+// V10 (Boğa Formasyonları) Taraması Başlat
+export async function runScanV10() {
+  const response = await axios.post(`${API_BASE}/scan-v10`);
+  return response.data;
 }
