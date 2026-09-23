@@ -410,15 +410,26 @@ function DashboardShell({
                     size="small"
                   />
                 </Box>
-                <Button
-                  variant="contained"
-                  startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                  onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
-                  disabled={isScanning}
-                  sx={{ borderRadius: 2, width: '100%' }}
-                >
-                  {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                    onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
+                    disabled={isScanning}
+                    sx={{ borderRadius: 2, flex: 1 }}
+                  >
+                    {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={isScanningV10 ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                    onClick={handleV10Scan}
+                    disabled={isScanningV10}
+                    sx={{ borderRadius: 2, flex: 1 }}
+                  >
+                    {isScanningV10 ? 'Taranıyor' : 'V10 Tarama'}
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -432,22 +443,9 @@ function DashboardShell({
         </Box>
 
         <Box sx={{ mt: 5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              🚀 V10 Boğa Formasyonu Taraması
-            </Typography>
-            <Button
-              variant="contained"
-              color="secondary"
-              size="small"
-              startIcon={isScanningV10 ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />}
-              onClick={handleV10Scan}
-              disabled={isScanningV10}
-              sx={{ borderRadius: 2 }}
-            >
-              {isScanningV10 ? 'Taranıyor' : 'V10 Tarama'}
-            </Button>
-          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
+            🚀 V10 Boğa Formasyonu Sonuçları
+          </Typography>
 
           {v10Error && (
             <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setV10Error('')}>
