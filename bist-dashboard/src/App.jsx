@@ -410,26 +410,47 @@ function DashboardShell({
                     size="small"
                   />
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                    onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
-                    disabled={isScanning}
-                    sx={{ borderRadius: 2, flex: 1 }}
-                  >
-                    {isScanning ? 'Taranıyor' : 'Yeni Tarama'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={isScanningV10 ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
-                    onClick={handleV10Scan}
-                    disabled={isScanningV10}
-                    sx={{ borderRadius: 2, flex: 1 }}
-                  >
-                    {isScanningV10 ? 'Taranıyor' : 'V10 Tarama'}
-                  </Button>
+                <Button
+                  variant="contained"
+                  startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                  onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
+                  disabled={isScanning}
+                  sx={{ borderRadius: 2, width: '100%' }}
+                >
+                  {isScanning ? 'Taranıyor' : 'ALMA9 VWMA21'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper', height: '100%' }}>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: 2,
+                  height: '100%'
+                }}
+              >
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Boğa Formasyonu Stratejisi
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+                    Bollinger Bandı, MFI ve mum formasyonlarına dayalı tarama
+                  </Typography>
                 </Box>
+                <Button
+                  variant="contained"
+                  startIcon={isScanningV10 ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleV10Scan}
+                  disabled={isScanningV10}
+                  sx={{ borderRadius: 2, width: '100%' }}
+                >
+                  {isScanningV10 ? 'Taranıyor' : 'Bollinger Bandı Taraması'}
+                </Button>
               </CardContent>
             </Card>
           </Grid>
@@ -444,7 +465,7 @@ function DashboardShell({
 
         <Box sx={{ mt: 5 }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
-            🚀 V10 Boğa Formasyonu Sonuçları
+            🚀 Bollinger Bandı Taraması Sonuçları
           </Typography>
 
           {v10Error && (
@@ -896,4 +917,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-
