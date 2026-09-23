@@ -8,7 +8,8 @@ import {
   addTicker,
   deleteTicker,
   getStockDetails,
-  getGainers
+  getGainers,
+  runScanV10
 } from './services/api';
 
 import StockListTable from './components/StockListTable';
@@ -242,7 +243,12 @@ function DashboardShell({
   isLoadingGainers,   
   gainersError,       
   setGainersError,    
-  handleFetchGainers  
+  handleFetchGainers,
+  v10Results,
+  isScanningV10,
+  v10Error,
+  setV10Error,
+  handleV10Scan
 }) {
 
   const [almaDistRange, setAlmaDistRange] = useState([2.0, 6.0]);
@@ -428,6 +434,79 @@ function DashboardShell({
         <Box sx={{ mt: 5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              🚀 V10 Boğa Formasyonu Taraması
+            </Typography>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="small"
+              startIcon={isScanningV10 ? <CircularProgress size={16} color="inherit" /> : <RefreshIcon />}
+              onClick={handleV10Scan}
+              disabled={isScanningV10}
+              sx={{ borderRadius: 2 }}
+            >
+              {isScanningV10 ? 'Taranıyor' : 'V10 Tarama'}
+            </Button>
+          </Box>
+
+          {v10Error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setV10Error('')}>
+              {v10Error}
+            </Alert>
+          )}
+
+          {v10Results && v10Results.length > 0 ? (
+            <Paper elevation={1} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(6, 1fr)',
+                  px: 2,
+                  py: 1.5,
+                  borderBottom: 1,
+                  borderColor: 'divider'
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Hisse</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Formasyon</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Giriş</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>MFI</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Kâr Al</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Stop Loss</Typography>
+              </Box>
+              {v10Results.map((row) => (
+                <Box
+                  key={row.Hisse}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(6, 1fr)',
+                    px: 2,
+                    py: 1.2,
+                    borderBottom: 1,
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.Hisse}</Typography>
+                  <Typography variant="body2">{row.Formasyon}</Typography>
+                  <Typography variant="body2">{formatNumber(row.Giris, { minimumFractionDigits: 2 })} ₺</Typography>
+                  <Typography variant="body2">{formatNumber(row.MFI, { minimumFractionDigits: 2 })}</Typography>
+                  <Typography variant="body2" color="success.main">{formatNumber(row.KarAl, { minimumFractionDigits: 2 })} ₺</Typography>
+                  <Typography variant="body2" color="error.main">{formatNumber(row.StopLoss, { minimumFractionDigits: 2 })} ₺</Typography>
+                </Box>
+              ))}
+            </Paper>
+          ) : (
+            !isScanningV10 && (
+              <Typography variant="body2" color="text.secondary">
+                Henüz V10 taraması yapılmadı.
+              </Typography>
+            )
+          )}
+        </Box>
+
+        <Box sx={{ mt: 5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               Bugün %9.5+ Yükselenler
             </Typography>
             <Button
@@ -578,7 +657,10 @@ export default function App() {
   const [gainers, setGainers] = useState([]);
   const [isLoadingGainers, setIsLoadingGainers] = useState(false);
   const [gainersError, setGainersError] = useState('');
-  
+
+  const [v10Results, setV10Results] = useState([]);
+  const [isScanningV10, setIsScanningV10] = useState(false);
+  const [v10Error, setV10Error] = useState('');
 
   useEffect(() => {
     window.localStorage.setItem('bist-dashboard-theme-mode', mode);
@@ -677,6 +759,20 @@ export default function App() {
     setIsLoadingGainers(false);
   }
 };
+
+  const handleV10Scan = async () => {
+    try {
+      setIsScanningV10(true);
+      setV10Error('');
+      const data = await runScanV10();
+      setV10Results(data?.results || []);
+    } catch (err) {
+      console.error('V10 tarama hatası:', err);
+      setV10Error(err.response?.data?.error || 'V10 taraması başlatılamadı.');
+    } finally {
+      setIsScanningV10(false);
+    }
+  };
 
   useEffect(() => {
     if (session) {
@@ -793,7 +889,13 @@ export default function App() {
         gainersError={gainersError}
         setGainersError={setGainersError}
         handleFetchGainers={handleFetchGainers}
+        v10Results={v10Results}
+        isScanningV10={isScanningV10}
+        v10Error={v10Error}
+        setV10Error={setV10Error}
+        handleV10Scan={handleV10Scan}
       />
     </ThemeProvider>
   );
 }
+
