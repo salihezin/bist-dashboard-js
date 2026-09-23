@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { getStockDetails, scanOne, scanGainer } from '../services/scanner.js';
 
+import { getStockDetails, scanOne, scanGainer, scanOneV10 } from '../services/scanner.js';
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
 
@@ -219,6 +219,36 @@ router.post('/scan-all', async (req, res) => {
 
   } catch (err) {
     console.error('Scan-all hatası:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+async function scanTickersV10(tickers) {
+  const matches = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tickers.length) {
+      const ticker = tickers[nextIndex++];
+      const { data: match } = await scanOneV10(ticker.symbol);
+      if (match) matches.push(match);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, worker)
+  );
+  return matches;
+}
+
+router.post('/scan-v10', async (req, res) => {
+  try {
+    const { data: tickersData, error } = await supabase.from('tickers').select('symbol');
+    if (error) throw error;
+
+    const matches = await scanTickersV10(tickersData);
+    return res.json({ count: matches.length, results: matches });
+  } catch (err) {
+    console.error('V10 scan hatasi:', err);
     return res.status(500).json({ error: err.message });
   }
 });
