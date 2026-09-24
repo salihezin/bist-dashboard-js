@@ -334,25 +334,13 @@ function DashboardShell({
           </Grid>
 
           <Grid item xs={12} sm={4}>
-            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper' }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary">
-                  Son Taramadaki Uygun Hisseler
-                </Typography>
-                <Typography variant="h4" color="success.main" sx={{ fontWeight: 700, mt: 0.5 }}>
-                  {scannedResults ? scannedResults.length : 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper' }}>
+            <Card elevation={2} sx={{ borderRadius: 2, backgroundColor: 'background.paper', height: '100%' }}>
               <CardContent
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 2
+                  gap: 2,
+                  height: '100%'
                 }}
               >
                 <Box>
@@ -419,6 +407,14 @@ function DashboardShell({
                 >
                   {isScanning ? 'Taranıyor' : 'ALMA9 VWMA21'}
                 </Button>
+                <Box sx={{ textAlign: 'center', mt: 'auto', pt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Son Taramadaki Uygun Hisseler
+                  </Typography>
+                  <Typography variant="h5" color="success.main" sx={{ fontWeight: 700 }}>
+                    {scannedResults ? scannedResults.length : 0}
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -429,7 +425,6 @@ function DashboardShell({
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'center',
                   gap: 2,
                   height: '100%'
                 }}
@@ -451,6 +446,14 @@ function DashboardShell({
                 >
                   {isScanningV10 ? 'Taranıyor' : 'Bollinger Bandı Taraması'}
                 </Button>
+                <Box sx={{ textAlign: 'center', mt: 'auto', pt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Son Taramadaki Uygun Hisseler
+                  </Typography>
+                  <Typography variant="h5" color="success.main" sx={{ fontWeight: 700 }}>
+                    {v10Results ? v10Results.length : 0}
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
