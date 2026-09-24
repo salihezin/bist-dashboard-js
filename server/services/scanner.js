@@ -275,24 +275,28 @@ export async function scanGainer(symbol, minChangePercent = 9.5) {
     console.error(`${symbol} kazanc taramasinda hata:`, error.message);
     return { data: null, reason: 'hata' };
   }
-}// ==========================================
-// V10 STRATEJİSİ: BOĞA FORMASYONLARI
-// (Bu bloğu server/services/scanner.js dosyasının EN SONUNA yapıştır)
+}
+
+// ==========================================
+// BOLLINGER BANDI STRATEJİSİ (MFI + Stochastic + RSI + ATR)
+// (Eski "boğa formasyonu" mantığının YERİNE geçti)
 // ==========================================
 
-function calculateBollingerLowerBand(closes, length = 20, std = 2) {
-  const lower = [];
+// Bollinger Alt Bandı - candles ile aynı uzunlukta, başı null dolu dizi döner
+function calculateBollingerLowerBandAligned(closes, length = 20, std = 2) {
+  const result = new Array(closes.length).fill(null);
   for (let i = length - 1; i < closes.length; i++) {
     const slice = closes.slice(i - length + 1, i + 1);
     const mean = slice.reduce((a, b) => a + b, 0) / length;
     const variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / length;
     const stdDev = Math.sqrt(variance);
-    lower.push(mean - stdDev * std);
+    result[i] = mean - stdDev * std;
   }
-  return lower;
+  return result;
 }
 
-function calculateMFI(candles, length = 14) {
+// MFI - candles ile aynı uzunlukta, başı null dolu dizi döner
+function calculateMFIAligned(candles, length = 14) {
   const typicalPrices = candles.map((c) => (c.high + c.low + c.close) / 3);
   const moneyFlows = typicalPrices.map((tp, i) => tp * (candles[i].volume || 0));
 
@@ -307,151 +311,103 @@ function calculateMFI(candles, length = 14) {
     }
   }
 
-  const mfi = [];
+  const result = new Array(candles.length).fill(null);
   for (let i = length; i < candles.length; i++) {
     const posSum = positiveFlow.slice(i - length + 1, i + 1).reduce((a, b) => a + b, 0);
     const negSum = negativeFlow.slice(i - length + 1, i + 1).reduce((a, b) => a + b, 0);
     if (negSum === 0) {
-      mfi.push(100);
+      result[i] = 100;
     } else {
       const moneyRatio = posSum / negSum;
-      mfi.push(100 - 100 / (1 + moneyRatio));
+      result[i] = 100 - 100 / (1 + moneyRatio);
     }
   }
-  // Dizi hizasını candles ile aynı tutmak için başa null doldur
-  return new Array(length).fill(null).concat(mfi);
+  return result;
 }
 
-// --- BOĞA MUM FORMASYONLARI (Candlesticker.com) ---
-
-function isBullishEngulfing(prev, curr) {
-  return prev.close < prev.open && curr.close > curr.open &&
-    curr.open < prev.close && curr.close > prev.open;
-}
-
-function isHammer(bar) {
-  const body = Math.abs(bar.close - bar.open);
-  const lowerShadow = Math.min(bar.close, bar.open) - bar.low;
-  const upperShadow = bar.high - Math.max(bar.close, bar.open);
-  return lowerShadow > body * 2 && upperShadow < body * 0.5;
-}
-
-function isBullishHarami(prev, curr) {
-  return prev.close < prev.open && curr.close > curr.open &&
-    curr.open > prev.close && curr.close < prev.open;
-}
-
-function isCrossHarami(prev, curr) {
-  const bodyCurr = Math.abs(curr.close - curr.open);
-  const isDoji = bodyCurr <= (curr.high - curr.low) * 0.1;
-  return prev.close < prev.open && isDoji &&
-    curr.open > prev.close && curr.close < prev.open;
-}
-
-function isPiercingLine(prev, curr) {
-  const midPrev = (prev.open + prev.close) / 2;
-  return prev.close < prev.open && curr.close > curr.open &&
-    curr.open < prev.close && curr.close > midPrev;
-}
-
-function isMorningStar(c1, c2, c3) {
-  return c1.close < c1.open &&
-    Math.abs(c2.close - c2.open) < Math.abs(c1.close - c1.open) * 0.3 &&
-    c3.close > c3.open && c3.close > (c1.open + c1.close) / 2;
-}
-
-function isThreeWhiteSoldiers(c1, c2, c3) {
-  return c1.close > c1.open && c2.close > c2.open && c3.close > c3.open &&
-    c2.close > c1.close && c3.close > c2.close;
-}
-
-function isTweezerBottom(prev, curr) {
-  return Math.abs(prev.low - curr.low) / prev.low < 0.005 &&
-    prev.close < prev.open && curr.close > curr.open;
-}
-
-function isBullishKicker(prev, curr) {
-  const prevBody = Math.abs(prev.close - prev.open);
-  const currBody = Math.abs(curr.close - curr.open);
-  return prev.close < prev.open && curr.close > curr.open &&
-    prevBody > (prev.high - prev.low) * 0.9 &&
-    currBody > (curr.high - curr.low) * 0.9;
-}
-
-function isBeltHold(bar) {
-  const body = Math.abs(bar.close - bar.open);
-  return bar.open === bar.low && bar.close > bar.open &&
-    body > (bar.high - bar.low) * 0.7;
-}
-
-function checkBullishPattern(candles, i) {
-  if (i < 1) return { found: false, name: null };
-  const prev = candles[i - 1];
-  const curr = candles[i];
-
-  if (isBullishEngulfing(prev, curr)) return { found: true, name: 'Yutan Boğa' };
-  if (isHammer(curr)) return { found: true, name: 'Çekiç Boğa' };
-  if (isBullishHarami(prev, curr)) return { found: true, name: 'Hamile Boğa' };
-  if (isCrossHarami(prev, curr)) return { found: true, name: 'Kros Hamile Boğa' };
-  if (isPiercingLine(prev, curr)) return { found: true, name: 'Delen Mumlar Boğa' };
-  if (isTweezerBottom(prev, curr)) return { found: true, name: 'Değen Mumlar Boğa' };
-  if (isBullishKicker(prev, curr)) return { found: true, name: 'Tepen Mumlar Boğa' };
-  if (isBeltHold(curr)) return { found: true, name: 'Belden Tutma Boğa' };
-
-  if (i >= 2) {
-    const c1 = candles[i - 2];
-    if (isMorningStar(c1, prev, curr)) return { found: true, name: 'Sabah Yıldızı Boğa' };
-    if (isThreeWhiteSoldiers(c1, prev, curr)) return { found: true, name: 'Üç Beyaz Asker Boğa' };
+// RSI (basit hareketli ortalama ile, pandas .rolling().mean() davranışı)
+function calculateRSI(closes, length = 14) {
+  const gains = new Array(closes.length).fill(0);
+  const losses = new Array(closes.length).fill(0);
+  for (let i = 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1];
+    gains[i] = diff > 0 ? diff : 0;
+    losses[i] = diff < 0 ? -diff : 0;
   }
 
-  return { found: false, name: null };
+  const result = new Array(closes.length).fill(null);
+  for (let i = length - 1; i < closes.length; i++) {
+    const gainSlice = gains.slice(i - length + 1, i + 1);
+    const lossSlice = losses.slice(i - length + 1, i + 1);
+    const avgGain = gainSlice.reduce((a, b) => a + b, 0) / length;
+    const avgLoss = lossSlice.reduce((a, b) => a + b, 0) / length;
+    if (avgLoss === 0) {
+      result[i] = 100;
+    } else {
+      const rs = avgGain / avgLoss;
+      result[i] = 100 - 100 / (1 + rs);
+    }
+  }
+  return result;
 }
 
-// --- V10 GİRİŞ KOŞULU ---
-// i-3: BB alt bandına değmiş mum, i-2: kırmızı mum, i-1: 1. yeşil mum,
-// i: 2. gün -> boğa formasyonu + kapanış >= 1. yeşil kapanış * 1.02
+// ATR (basit hareketli ortalama ile True Range)
+function calculateATR(candles, length = 14) {
+  const trs = candles.map((c, i) => {
+    const tr1 = c.high - c.low;
+    if (i === 0) return tr1;
+    const tr2 = Math.abs(c.high - candles[i - 1].close);
+    const tr3 = Math.abs(c.low - candles[i - 1].close);
+    return Math.max(tr1, tr2, tr3);
+  });
 
-function checkV10EntrySignal(candles, lowerBand, i) {
-  if (i < 3) return { ok: false };
-
-  const bbTouch = candles[i - 3];
-  const lowerAtTouch = lowerBand[i - 3];
-  const redCandle = candles[i - 2];
-  const green1 = candles[i - 1];
-  const current = candles[i];
-
-  if (lowerAtTouch == null) return { ok: false };
-
-  const condBbTouch = bbTouch.low <= lowerAtTouch;
-  const condRed = redCandle.close < redCandle.open;
-  const condGreen1 = green1.close > green1.open;
-
-  const { found: patternFound, name: patternName } = checkBullishPattern(candles, i);
-
-  const hedefGiris = green1.close * 1.02;
-  const condGiris = current.close >= hedefGiris;
-
-  const allOk = condBbTouch && condRed && condGreen1 && patternFound && condGiris;
-
-  return {
-    ok: allOk,
-    girisFiyat: current.close,
-    patternName,
-  };
+  const result = new Array(candles.length).fill(null);
+  for (let i = length - 1; i < trs.length; i++) {
+    const slice = trs.slice(i - length + 1, i + 1);
+    result[i] = slice.reduce((a, b) => a + b, 0) / length;
+  }
+  return result;
 }
 
-// --- ANA V10 TARAMA FONKSİYONU ---
-// NOT: calculateVWMA fonksiyonu bu dosyada zaten tanımlı, tekrar yazmadık.
+// Stochastic (%K, %D)
+function calculateStochastic(candles, kPeriod = 10, dPeriod = 3) {
+  const kLine = new Array(candles.length).fill(null);
+  for (let i = kPeriod - 1; i < candles.length; i++) {
+    const slice = candles.slice(i - kPeriod + 1, i + 1);
+    const lowMin = Math.min(...slice.map((c) => c.low));
+    const highMax = Math.max(...slice.map((c) => c.high));
+    const denom = highMax - lowMin;
+    kLine[i] = denom === 0 ? 0 : 100 * ((candles[i].close - lowMin) / denom);
+  }
 
-const V10_MFI_ESIK = 40;
-const V10_VWMA_PERIYOD = 21;
+  const dLine = new Array(candles.length).fill(null);
+  for (let i = 0; i < candles.length; i++) {
+    if (i < dPeriod - 1) continue;
+    const slice = kLine.slice(i - dPeriod + 1, i + 1);
+    if (slice.some((v) => v == null)) continue;
+    dLine[i] = slice.reduce((a, b) => a + b, 0) / dPeriod;
+  }
+
+  return { kLine, dLine };
+}
+
+// --- AYARLAR ---
+const BB_MFI_ALT = 35;
+const BB_MFI_UST = 55;
+const BB_RSI_ESIK = 40;
+const BB_STOP_CARPAN = 1.5;
+const BB_MAX_STOP_YUZDE = 10.0;
+const BB_TP_CARPAN = 3.0;
+
+// --- ANA TARAMA FONKSİYONU ---
+// NOT: Fonksiyon adı (scanOneV10) route dosyasıyla uyumlu olsun diye korundu.
 
 export async function scanOneV10(symbol) {
   try {
     const formattedSymbol = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
 
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 6);
+    startDate.setMonth(startDate.getMonth() - 3);
 
     const result = await yahooFinance.chart(formattedSymbol, {
       period1: startDate,
@@ -459,7 +415,7 @@ export async function scanOneV10(symbol) {
     });
 
     const rawCandles = result?.quotes || [];
-    if (!Array.isArray(rawCandles) || rawCandles.length < 30) {
+    if (!Array.isArray(rawCandles) || rawCandles.length < 60) {
       return { data: null, reason: 'yetersiz_veri' };
     }
 
@@ -480,46 +436,64 @@ export async function scanOneV10(symbol) {
       };
     });
 
-    if (validCandles.length < 30) {
+    if (validCandles.length < 60) {
       return { data: null, reason: 'yetersiz_veri' };
     }
 
     const closes = validCandles.map((c) => c.close);
-    const lowerBandRaw = calculateBollingerLowerBand(closes, 20, 2);
-    const alignedLowerBand = new Array(19).fill(null).concat(lowerBandRaw);
 
-    const mfiSeries = calculateMFI(validCandles, 14);
-    const vwmaSeriesRaw = calculateVWMA(validCandles, V10_VWMA_PERIYOD);
-    const alignedVwma = new Array(V10_VWMA_PERIYOD - 1).fill(null).concat(vwmaSeriesRaw);
+    const lowerBand = calculateBollingerLowerBandAligned(closes, 20, 2);
+    const mfiSeries = calculateMFIAligned(validCandles, 14);
+    const atrSeries = calculateATR(validCandles, 14);
+    const rsiSeries = calculateRSI(closes, 14);
+    const { kLine, dLine } = calculateStochastic(validCandles, 10, 3);
 
     const lastIdx = validCandles.length - 1;
-    const lastMfi = mfiSeries[lastIdx];
-    const prevMfi = mfiSeries[lastIdx - 1];
-
-    if (lastMfi == null || prevMfi == null) {
+    const prevIdx = lastIdx - 1;
+    if (prevIdx < 0) {
       return { data: null, reason: 'yetersiz_veri' };
     }
 
-    const signal = checkV10EntrySignal(validCandles, alignedLowerBand, lastIdx);
+    const lastBar = validCandles[lastIdx];
+    const prevBar = validCandles[prevIdx];
 
-    const condMfi = lastMfi > V10_MFI_ESIK;
-    const condMfiArtiyor = lastMfi > prevMfi;
+    const lowerAtPrev = lowerBand[prevIdx];
+    const mfiLast = mfiSeries[lastIdx];
+    const mfiPrev = mfiSeries[prevIdx];
+    const atrLast = atrSeries[lastIdx];
+    const rsiLast = rsiSeries[lastIdx];
+    const kLast = kLine[lastIdx];
+    const dLast = dLine[lastIdx];
 
-    if (signal.ok && condMfi && condMfiArtiyor) {
-      const vwmaDeger = alignedVwma[lastIdx];
-      const karAlVwma = vwmaDeger != null ? vwmaDeger * 1.05 : null;
-      const karAlMin = signal.girisFiyat * 1.03;
-      const karAlSeviye = karAlVwma != null ? Math.max(karAlVwma, karAlMin) : karAlMin;
-      const stopLossSeviye = signal.girisFiyat * 0.97;
+    if (
+      lowerAtPrev == null || mfiLast == null || mfiPrev == null ||
+      atrLast == null || rsiLast == null || kLast == null || dLast == null
+    ) {
+      return { data: null, reason: 'yetersiz_veri' };
+    }
+
+    const condBbTouch = prevBar.low <= lowerAtPrev;
+    const condGreen = lastBar.close > lastBar.open;
+    const condMfiAralik = mfiLast > BB_MFI_ALT && mfiLast < BB_MFI_UST;
+    const condMfiArtiyor = mfiLast > mfiPrev;
+    const condStoch = kLast > dLast;
+    const condRsi = rsiLast > BB_RSI_ESIK;
+
+    if (condBbTouch && condGreen && condMfiAralik && condMfiArtiyor && condStoch && condRsi) {
+      const girisFiyat = lastBar.close;
+      let stopSeviye = girisFiyat - atrLast * BB_STOP_CARPAN;
+      stopSeviye = Math.max(stopSeviye, girisFiyat * (1 - BB_MAX_STOP_YUZDE / 100));
+      const tpSeviye = girisFiyat + atrLast * BB_TP_CARPAN;
 
       return {
         data: {
           Hisse: symbol.replace('.IS', ''),
-          Formasyon: signal.patternName,
-          Giris: Number(signal.girisFiyat.toFixed(2)),
-          MFI: Number(lastMfi.toFixed(2)),
-          KarAl: Number(karAlSeviye.toFixed(2)),
-          StopLoss: Number(stopLossSeviye.toFixed(2)),
+          Giris: Number(girisFiyat.toFixed(2)),
+          MFI: Number(mfiLast.toFixed(2)),
+          RSI: Number(rsiLast.toFixed(2)),
+          StochK: Number(kLast.toFixed(2)),
+          Stop: Number(stopSeviye.toFixed(2)),
+          TP: Number(tpSeviye.toFixed(2)),
         },
         reason: 'uygun',
       };
@@ -527,7 +501,7 @@ export async function scanOneV10(symbol) {
 
     return { data: null, reason: 'kritere_uymadi' };
   } catch (error) {
-    console.error(`${symbol} V10 taranırken hata:`, error.message);
+    console.error(`${symbol} taranırken hata:`, error.message);
     return { data: null, reason: 'hata' };
   }
 }
