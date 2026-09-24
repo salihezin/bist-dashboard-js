@@ -508,7 +508,19 @@ function DashboardShell({
                     borderColor: 'divider'
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.Hisse}</Typography>
+                  <Typography
+                    variant="body2"
+                    onClick={() => handleSelectStock(row.Hisse)}
+                    sx={{
+                      fontWeight: 600,
+                      color: 'primary.main',
+                      cursor: 'pointer',
+                      width: 'fit-content',
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
+                  >
+                    {row.Hisse}
+                  </Typography>
                   <Typography variant="body2">{formatNumber(row.Giris, { minimumFractionDigits: 2 })} ₺</Typography>
                   <Typography variant="body2">{formatNumber(row.MFI, { minimumFractionDigits: 2 })}</Typography>
                   <Typography variant="body2">{formatNumber(row.RSI, { minimumFractionDigits: 2 })}</Typography>
