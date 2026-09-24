@@ -692,7 +692,14 @@ export default function App() {
   const [isLoadingGainers, setIsLoadingGainers] = useState(false);
   const [gainersError, setGainersError] = useState('');
 
-  const [v10Results, setV10Results] = useState([]);
+  const [v10Results, setV10Results] = useState(() => {
+    try {
+      const stored = window.localStorage.getItem('bist-dashboard-v10-results');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isScanningV10, setIsScanningV10] = useState(false);
   const [v10Error, setV10Error] = useState('');
 
@@ -799,7 +806,13 @@ export default function App() {
       setIsScanningV10(true);
       setV10Error('');
       const data = await runScanV10();
-      setV10Results(data?.results || []);
+      const results = data?.results || [];
+      setV10Results(results);
+      try {
+        window.localStorage.setItem('bist-dashboard-v10-results', JSON.stringify(results));
+      } catch {
+        // localStorage kullanılamıyorsa sonuç sadece bu oturumda görünür
+      }
     } catch (err) {
       console.error('V10 tarama hatası:', err);
       setV10Error(err.response?.data?.error || 'V10 taraması başlatılamadı.');
