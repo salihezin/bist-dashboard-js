@@ -1,20 +1,72 @@
-import React, { useState } from 'react';
-import { runV10Scan } from './v10_strategy';
+import React, { useState, useEffect } from 'react';
+import { getLatestResults, getStockDetails, runScanV10 } from './services/api';
+import ChartComponent from './ChartComponent';
 
 export default function Dashboard() {
-  const [result, setResult] = useState(null);
+  const [latest, setLatest] = useState(null);
+  const [selectedStock, setSelectedStock] = useState(null);
 
+  // Site açıldığında son tarama sonuçlarını getir
+  useEffect(() => {
+    async function fetchLatest() {
+      const res = await getLatestResults();
+      setLatest(res);
+    }
+    fetchLatest();
+  }, []);
+
+  // Tarama butonuna basınca yeni sonuçları getir
   const handleScan = async () => {
-    const res = await runV10Scan("BIMAS.IS"); // örnek hisse
-    setResult(res);
+    const res = await runScanV10();
+    setLatest(res); // son tarama olarak kaydet
+  };
+
+  // Hisseye tıklayınca detaylı grafik verisini getir
+  const handleStockClick = async (symbol) => {
+    const details = await getStockDetails(symbol);
+    setSelectedStock(details);
   };
 
   return (
     <div>
       <h1>BIST Taraması</h1>
       <button onClick={handleScan}>🚀 V10 Tarama</button>
-      {result && (
-        <pre>{JSON.stringify(result, null, 2)}</pre>
+
+      {/* Butonun altına son tarama tarihi */}
+      {latest && (
+        <p>Son Tarama: {latest.date} {latest.time}</p>
+      )}
+
+      {/* Site açıldığında son tarama hisseleri */}
+      {latest && latest.stocks && (
+        <table>
+          <thead>
+            <tr>
+              <th>Hisse</th>
+              <th>Fiyat</th>
+              <th>MFI</th>
+              <th>RSI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {latest.stocks.map((s, i) => (
+              <tr key={i} onClick={() => handleStockClick(s.symbol)}>
+                <td>{s.symbol}</td>
+                <td>{s.price}</td>
+                <td>{s.mfi}</td>
+                <td>{s.rsi}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Seçilen hisse için Bollinger + VWMA21 grafiği */}
+      {selectedStock && (
+        <div>
+          <h2>{selectedStock.symbol} Grafiği</h2>
+          <ChartComponent data={selectedStock} />
+        </div>
       )}
     </div>
   );
