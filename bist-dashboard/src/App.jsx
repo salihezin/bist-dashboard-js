@@ -490,11 +490,11 @@ function DashboardShell({
                 }}
               >
                 <Typography variant="caption" sx={{ fontWeight: 700 }}>Hisse</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>Formasyon</Typography>
                 <Typography variant="caption" sx={{ fontWeight: 700 }}>Giriş</Typography>
                 <Typography variant="caption" sx={{ fontWeight: 700 }}>MFI</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>Kâr Al</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>Stop Loss</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>RSI</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>Stop</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>TP</Typography>
               </Box>
               {v10Results.map((row) => (
                 <Box
@@ -509,11 +509,11 @@ function DashboardShell({
                   }}
                 >
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.Hisse}</Typography>
-                  <Typography variant="body2">{row.Formasyon}</Typography>
                   <Typography variant="body2">{formatNumber(row.Giris, { minimumFractionDigits: 2 })} ₺</Typography>
                   <Typography variant="body2">{formatNumber(row.MFI, { minimumFractionDigits: 2 })}</Typography>
-                  <Typography variant="body2" color="success.main">{formatNumber(row.KarAl, { minimumFractionDigits: 2 })} ₺</Typography>
-                  <Typography variant="body2" color="error.main">{formatNumber(row.StopLoss, { minimumFractionDigits: 2 })} ₺</Typography>
+                  <Typography variant="body2">{formatNumber(row.RSI, { minimumFractionDigits: 2 })}</Typography>
+                  <Typography variant="body2" color="error.main">{formatNumber(row.Stop, { minimumFractionDigits: 2 })} ₺</Typography>
+                  <Typography variant="body2" color="success.main">{formatNumber(row.TP, { minimumFractionDigits: 2 })} ₺</Typography>
                 </Box>
               ))}
             </Paper>
