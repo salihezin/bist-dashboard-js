@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
+import { getStockDetails, scanOne, scanGainer, scanOneV10, getStockChartData } from '../services/scanner.js';
 
-import { getStockDetails, scanOne, scanGainer, scanOneV10 } from '../services/scanner.js';
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
 
@@ -17,7 +17,6 @@ async function scanTickers(tickers, minAlmaDist = 2.0, maxAlmaDist = 6.0, minVwm
         let hasNegativeChange = false;
 
         try {
-          // Teknik olarak uygun olsa bile günlük değişimi negatif olanları ele.
           const details = await getStockDetails(match.Hisse);
           hasNegativeChange = Number.isFinite(details?.change) && details.change < 0;
         } catch (detailErr) {
@@ -66,6 +65,24 @@ async function scanGainers(tickers, minChangePercent = 9.5) {
   return matches;
 }
 
+async function scanTickersV10(tickers) {
+  const matches = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tickers.length) {
+      const ticker = tickers[nextIndex++];
+      const { data: match } = await scanOneV10(ticker.symbol);
+      if (match) matches.push(match);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, worker)
+  );
+  return matches;
+}
+
 router.get('/gainers', async (req, res) => {
   try {
     const minPct = Number(req.query.min) || 9.5;
@@ -79,8 +96,6 @@ router.get('/gainers', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
-
-// --- ROUTER ENDPOINTLERİ ---
 
 router.get('/tickers', async (req, res) => {
   try {
@@ -122,6 +137,17 @@ router.get('/stocks/:symbol', async (req, res) => {
   } catch (err) {
     console.error('Hisse detayı alınamadı:', err.message);
     return res.status(502).json({ error: 'Hisse detayları şu anda alınamadı.' });
+  }
+});
+
+// Hisse grafiği: mumlar + Bollinger Bandı + MFI
+router.get('/stocks/:symbol/chart', async (req, res) => {
+  try {
+    const data = await getStockChartData(req.params.symbol.toUpperCase().trim());
+    return res.json(data);
+  } catch (err) {
+    console.error('Grafik verisi alınamadı:', err.message);
+    return res.status(502).json({ error: 'Grafik verileri şu anda alınamadı.' });
   }
 });
 
@@ -172,11 +198,8 @@ router.post('/scan-all', async (req, res) => {
 
     if (tickerError) throw tickerError;
 
-    // 538 hisselik havuzda seri istekler taramayı dakikalarca uzatıyordu.
-    // Yahoo'yu zorlamadan beş eşzamanlı istek kullanıyoruz.
     const matchedStocks = await scanTickers(tickersData, minAlmaDist, maxAlmaDist, minVwmaDist, maxVwmaDist);
 
-    // 1. Log kaydı
     const logPayload = { scanned_at: new Date().toISOString() };
     if (userId) logPayload.user_id = userId;
 
@@ -188,7 +211,6 @@ router.post('/scan-all', async (req, res) => {
 
     if (logErr) throw logErr;
 
-    // Eski tarama sonuçlarını temizle
     const { error: deleteErr } = await supabase
       .from('scan_results')
       .delete()
@@ -196,7 +218,6 @@ router.post('/scan-all', async (req, res) => {
 
     if (deleteErr) throw deleteErr;
 
-    // 2. Eşleşen sonuçları kaydet
     if (matchedStocks.length > 0) {
       const recordsToInsert = matchedStocks.map((stock) => ({
         scan_id: logData.id,
@@ -222,23 +243,6 @@ router.post('/scan-all', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
-async function scanTickersV10(tickers) {
-  const matches = [];
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < tickers.length) {
-      const ticker = tickers[nextIndex++];
-      const { data: match } = await scanOneV10(ticker.symbol);
-      if (match) matches.push(match);
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(SCAN_CONCURRENCY, tickers.length) }, worker)
-  );
-  return matches;
-}
 
 router.post('/scan-v10', async (req, res) => {
   try {
