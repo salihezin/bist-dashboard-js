@@ -248,7 +248,8 @@ function DashboardShell({
   isScanningV10,
   v10Error,
   setV10Error,
-  handleV10Scan
+  handleV10Scan,
+  v10ScanLog
 }) {
 
   const [almaDistRange, setAlmaDistRange] = useState([2.0, 6.0]);
@@ -435,6 +436,11 @@ function DashboardShell({
                   </Typography>
                   <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
                     Bollinger Bandı, MFI ve mum formasyonlarına dayalı tarama
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary', mt: 1 }}>
+                    {v10ScanLog
+                      ? `${new Date(v10ScanLog.scanned_at).toLocaleString('tr-TR')}`
+                      : 'Henüz tarama yapılmadı'}
                   </Typography>
                 </Box>
                 <Button
@@ -700,6 +706,14 @@ export default function App() {
       return [];
     }
   });
+  const [v10ScanLog, setV10ScanLog] = useState(() => {
+    try {
+      const stored = window.localStorage.getItem('bist-dashboard-v10-scanlog');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isScanningV10, setIsScanningV10] = useState(false);
   const [v10Error, setV10Error] = useState('');
 
@@ -807,9 +821,12 @@ export default function App() {
       setV10Error('');
       const data = await runScanV10();
       const results = data?.results || [];
+      const log = { scanned_at: new Date().toISOString() };
       setV10Results(results);
+      setV10ScanLog(log);
       try {
         window.localStorage.setItem('bist-dashboard-v10-results', JSON.stringify(results));
+        window.localStorage.setItem('bist-dashboard-v10-scanlog', JSON.stringify(log));
       } catch {
         // localStorage kullanılamıyorsa sonuç sadece bu oturumda görünür
       }
@@ -941,6 +958,7 @@ export default function App() {
         v10Error={v10Error}
         setV10Error={setV10Error}
         handleV10Scan={handleV10Scan}
+        v10ScanLog={v10ScanLog}
       />
     </ThemeProvider>
   );
