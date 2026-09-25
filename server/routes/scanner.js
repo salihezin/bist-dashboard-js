@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabase } from '../config/supabase.js';
-import { getStockDetails, scanOne, scanGainer, scanOneV10, getStockChartData } from '../services/scanner.js';
+import { getStockDetails, scanOne, scanGainer, scanOneV10 } from '../services/scanner.js';
 
 const router = express.Router();
 const SCAN_CONCURRENCY = 5;
@@ -137,17 +137,6 @@ router.get('/stocks/:symbol', async (req, res) => {
   } catch (err) {
     console.error('Hisse detayı alınamadı:', err.message);
     return res.status(502).json({ error: 'Hisse detayları şu anda alınamadı.' });
-  }
-});
-
-// Hisse grafiği: mumlar + Bollinger Bandı + MFI
-router.get('/stocks/:symbol/chart', async (req, res) => {
-  try {
-    const data = await getStockChartData(req.params.symbol.toUpperCase().trim());
-    return res.json(data);
-  } catch (err) {
-    console.error('Grafik verisi alınamadı:', err.message);
-    return res.status(502).json({ error: 'Grafik verileri şu anda alınamadı.' });
   }
 });
 
