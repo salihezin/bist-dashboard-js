@@ -404,11 +404,11 @@ function DashboardShell({
                   startIcon={isScanning ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
                   onClick={() => handleScan(almaDistRange[0], almaDistRange[1], vwmaDistRange[0], vwmaDistRange[1])}
                   disabled={isScanning}
-                  sx={{ borderRadius: 2, width: '100%' }}
+                  sx={{ borderRadius: 2, width: '100%', mt: 'auto' }}
                 >
                   {isScanning ? 'Taranıyor' : 'ALMA9 VWMA21'}
                 </Button>
-                <Box sx={{ textAlign: 'center', mt: 'auto', pt: 1 }}>
+                <Box sx={{ textAlign: 'center', pt: 1 }}>
                   <Typography variant="caption" color="text.secondary">
                     Son Taramadaki Uygun Hisseler
                   </Typography>
@@ -448,11 +448,11 @@ function DashboardShell({
                   startIcon={isScanningV10 ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
                   onClick={handleV10Scan}
                   disabled={isScanningV10}
-                  sx={{ borderRadius: 2, width: '100%' }}
+                  sx={{ borderRadius: 2, width: '100%', mt: 'auto' }}
                 >
                   {isScanningV10 ? 'Taranıyor' : 'Bollinger Bandı Taraması'}
                 </Button>
-                <Box sx={{ textAlign: 'center', mt: 'auto', pt: 1 }}>
+                <Box sx={{ textAlign: 'center', pt: 1 }}>
                   <Typography variant="caption" color="text.secondary">
                     Son Taramadaki Uygun Hisseler
                   </Typography>
